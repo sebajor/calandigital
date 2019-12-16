@@ -1,0 +1,12 @@
+construct==2.5.3
+katcp==0.5.5
+h5py
+numpy
+matplotlib
+pyserial
+python-vxi11
+setuptools
+git+https://github.com/ska-sa/PySPEAD.git
+git+https://github.com/ska-sa/corr.git
+git+https://github.com/sma-wideband/adc_tests.git
+git+https://github.com/nrao/ValonSynth.git
