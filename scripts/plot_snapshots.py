@@ -5,22 +5,19 @@ import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 
 parser = argparse.ArgumentParser(
-    description="Initialize ROACH communication and program boffile.")
+    description="Plot snapshots from snapshot blocks in ROACH model.")
 parser.add_argument("-i", "--ip", dest="ip", required=True,
     help="ROACH IP address.")
 parser.add_argument("-b", "--bof", dest="boffile",
     help="boffile to load into the FPGA.")
 parser.add_argument("-r", "--rver", dest="roach_version", type=int, default=2,
     help="ROACH verstion to use. 1 and 2 supported.")
-parser.add_argument("-s", "--snapshots", dest="snapshots", nargs='+',
-    help="snapshot names. Overrides snapshot format.")
-parser.add_argument("-sf", "--snapshot_format", dest="snapname", default="adcsnap",
-    help="snapshot naming format used to deduce snapshot names.\
-    Needs nsnapshot argument also.")
+parser.add_argument("-sn", "--snapname", dest="snapname", default="adcsnap",
+    help="snapshot naming suffix used to deduce the name of the snapshot blocks.")
 parser.add_argument("-ns", "--nsnapshots", dest="nsnapshots", type=int, default=2,
-    help="number of snapshots. Needed to derive snapshot names.")
+    help="number of snapshots. Used to deduce the name of the snapshot blocks.")
 parser.add_argument("-dt", "--dtype", dest="dtype", default=">i1",
-    help="data type of snapshot format. Must be Numpy compatible.")
+    help="data type of snapshot data. Must be Numpy compatible.")
 parser.add_argument("-sa", "--samples", dest="nsamples", type=int, default=256,
     help="samples of snapshot to plot. By default plot all samples.")
 
@@ -32,12 +29,9 @@ def main():
         roach_version = args.roach_version)
 
     # get snapshot names
-    if args.snapshots is not None:
-        snapshots = args.snapshots
-    else:
-        snapshots = [args.snapname + str(i) for i in range(args.nsnapshots)]
+    snapshots = [args.snapname + str(i) for i in range(args.nsnapshots)]
 
-    fig, lines = create_figure(snapshots, args.nsamples, args.dtype)
+    fig, lines = create_figure(args.nsnapshots, args.nsamples, args.dtype)
 
     def animate(_):
         snapdata_list = cd.read_snapshots(roach, snapshots, args.dtype)
@@ -48,9 +42,8 @@ def main():
     ani = FuncAnimation(fig, animate, blit=True)
     plt.show()
 
-def create_figure(snapshots, nsamples, dtype_string):
+def create_figure(nsnapshots, nsamples, dtype_string):
     axmap = {1 : (1,1), 2 : (1,2), 4 : (2,2), 16 : (4,4)}
-    nsnapshots = len(snapshots)
     dtype = np.dtype(dtype_string)
 
     fig, axes = plt.subplots(*axmap[nsnapshots])

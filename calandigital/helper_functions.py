@@ -7,7 +7,7 @@ import numpy as np
 
 def initialize_roach(ip, port=7147, boffile=None, roach_version=2):
     """
-    Initialize ROACH, that is, start ROACH communication, program boffile
+    Initializes ROACH, that is, start ROACH communication, program boffile
     into the FPGA, and creates the FpgaClient object to communicate with.
     :param ip: ROACH IP address.
     :param port: ROCH TCP/IP port for communication.
@@ -58,24 +58,68 @@ def initialize_roach(ip, port=7147, boffile=None, roach_version=2):
     return roach
 
 def read_snapshots(roach, snapshots, dtype='>i1'):
+    """
+    Reads snapshot data from a list of snapshots names.
+    :param roach: CalanFpga object to communicate with ROACH.
+    :param snapshots: list of snapshot names to read.
+    :param dtype: data type of data in snapshot. Must be Numpy compatible.
+        My prefered format:
+            (<, >):    little endian, big endian
+            (i, u):    signed, unsigned
+            (1,2,...): number of bytes
+            e.g.: >i1: one byte, signed, big-endian
+    :return: list of data arrays in the same order as the snapshot list. 
+        Note: the data type is fixed to 8 bits as all of our ADC work at 
+        that size. 
+    """
+    snapdata_list = []
+    for snapshot in snapshots:
+        rawdata  = roach.snapshot_get(snapshot, man_trig=True, man_valid=True)['data']
+        snapdata = np.fromstring(rawdata, dtype=dtype)
+        snapdata_list.append(snapdata)
+    
+    return snap_data_arr
+
+def read_interleave_data(roach, brams, awidth, dwidth, dtype):
+    """
+    Reads data from a list of brams and interleave the data in order to return 
+    in correctly ordered (as per typical spectrometer models in ROACH).
+    :param brams: list of bram list to read and interleave.
+    :param awidth: width of bram address in bits.
+    :param dwidth: width of bram data in bits.
+    :param data_type: data type of data in brams. See read_snapshots().
+    :return: array with the read data.
+    """
+    depth = 2**awidth
+    bramdata_list = []
+
+    # get data
+    for bram in brams:
+        rawdata  = roach.read(bram, depth*dwidth/8, 0)
+        bramdata = np.frombuffer(rawdata, dtype=dtype)
+        bramdata_list.append(bramdata)
+
+    # interleave data list into a single array (this works, believe me)
+    interleaved_data = np.vstack(data_list).reshape((-1,), order='F')
+
+    return interleaved_data
+
+def scale_and_dBFS_specdata(data, acclen, nbits, nchannels):
         """
-        Read snapshot data from a list of snapshots names.
-        :param roach: CalanFpga object to communicate with ROACH.
-        :param snapshots: list of snapshot names to read.
-        :param dtype: data type of data in snapshot. Must be Numpy compatible.
-            My prefered format:
-                (<, >):    little endian, big endian
-                (i, u):    signed, unsigned
-                (1,2,...): number of bytes
-                e.g.: >i1: one byte, signed, big-endian
-        :return: list of data arrays in the same order as the snapshot list. 
-            Note: the data type is fixed to 8 bits as all of our ADC work at 
-            that size. 
+        Scales spectral data by an accumulation length, and converts
+        the data to dBFS. Used for plotting spectra.
+        :param data: spectral data to convert. Must be Numpy array.
+        :param acclen: accumulation length of spectrometer. 
+            Used to scale the data.
+        :param nbits: number of bits used to sample the data (ADC bits).
+        :param nchannels: number of channels of the spectrometer.
+        :return: scaled data in dBFS.
         """
-        snap_data_arr = []
-        for snapshot in snapshots:
-            raw_data  = roach.snapshot_get(snapshot, man_trig=True, man_valid=True)['data']
-            snap_data = np.fromstring(raw_data, dtype=dtype)
-            snap_data_arr.append(snap_data)
-        
-        return snap_data_arr
+        # scale data 
+        data = data / acclen
+
+        # convert data to dBFS
+        dBFS = 6.02*nbits + 1.76 + 10*np.log10(nchannels)
+        data = 10*np.log10(data+1) - dBFS
+
+        return data
