@@ -33,9 +33,11 @@ def initialize_roach(ip, port=7147, boffile=None, roach_version=2):
         if roach_version is 1:
             print("\tUsing ROACH1, programming from ROACH internal memory...")
             roach.progdev(boffile)
+            time.sleep(1)
         elif roach_version is 2:
             print("\tUsing ROACH2, programming from PC memory...")
             roach.upload_program_bof(boffile, 60000)
+            time.sleep(1)
         else:
             print("ROACH version not supported.")
             exit()
@@ -78,7 +80,7 @@ def read_snapshots(roach, snapshots, dtype='>i1'):
         snapdata = np.fromstring(rawdata, dtype=dtype)
         snapdata_list.append(snapdata)
     
-    return snap_data_arr
+    return snapdata_list
 
 def read_interleave_data(roach, brams, awidth, dwidth, dtype):
     """
@@ -97,10 +99,11 @@ def read_interleave_data(roach, brams, awidth, dwidth, dtype):
     for bram in brams:
         rawdata  = roach.read(bram, depth*dwidth/8, 0)
         bramdata = np.frombuffer(rawdata, dtype=dtype)
+        bramdata = bramdata.astype(np.float)
         bramdata_list.append(bramdata)
 
     # interleave data list into a single array (this works, believe me)
-    interleaved_data = np.vstack(data_list).reshape((-1,), order='F')
+    interleaved_data = np.vstack(bramdata_list).reshape((-1,), order='F')
 
     return interleaved_data
 

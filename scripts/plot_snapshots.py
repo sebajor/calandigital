@@ -11,7 +11,7 @@ parser.add_argument("-i", "--ip", dest="ip", required=True,
 parser.add_argument("-b", "--bof", dest="boffile",
     help="boffile to load into the FPGA.")
 parser.add_argument("-r", "--rver", dest="roach_version", type=int, default=2,
-    help="ROACH verstion to use. 1 and 2 supported.")
+    help="ROACH version to use. 1 and 2 supported.")
 parser.add_argument("-sn", "--snapname", dest="snapname", default="adcsnap",
     help="snapshot naming suffix used to deduce the name of the snapshot blocks.")
 parser.add_argument("-ns", "--nsnapshots", dest="nsnapshots", type=int, default=2,
@@ -50,11 +50,12 @@ def create_figure(nsnapshots, nsamples, dtype_string):
     fig.set_tight_layout(True)
 
     lines = []
-    for ax in axes.flatten():
+    for i, ax in enumerate(axes.flatten()):
         ax.set_xlim(0, nsamples)
         ax.set_ylim(np.iinfo(dtype).min-10, np.iinfo(dtype).max+10)
         ax.set_xlabel('Samples')
         ax.set_ylabel('Amplitude [a.u.]')
+        ax.set_title('In ' + str(i))
         ax.grid()
 
         line, = ax.plot([], [], animated=True)
