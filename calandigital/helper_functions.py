@@ -29,7 +29,7 @@ def initialize_roach(ip, port=7147, boffile=None, roach_version=2):
     print("done")
 
     if boffile is not None:
-        print("Programming boffile into ROACH...")
+        print("Programming boffile " + boffile + " into ROACH...")
         if roach_version is 1:
             print("\tUsing ROACH1, programming from ROACH internal memory...")
             roach.progdev(boffile)

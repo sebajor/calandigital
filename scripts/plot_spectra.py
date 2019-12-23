@@ -21,7 +21,6 @@ parser.add_argument("-dt", "--dtype", dest="dtype", default=">i8",
 parser.add_argument("-aw", "--addrwidth", dest="awidth", type=int, default=9,
     help="width of bram address in bits.")
 parser.add_argument("-dw", "--datawidth", dest="dwidth", type=int, default=64,
-
     help="width of bram data in bits.")
 parser.add_argument("-bw", "--bandwidth", dest="bw", type=float, default=1080,
     help="Bandwidth of the spectra to plot in MHz.")
@@ -50,9 +49,9 @@ def main():
     fig, lines = create_figure(args.nspecs, args.bw, dBFS)
 
     print("Setting and resetting registers...")
+    roach.write_int(args.acc_reg, args.acclen)
     roach.write_int(args.count_reg, 1)
     roach.write_int(args.count_reg, 0)
-    roach.write_int(args.acc_reg, args.acclen)
     print("done")
 
     def animate(_):
@@ -71,6 +70,7 @@ def create_figure(nspecs, bandwidth, dBFS):
     axmap = {1 : (1,1), 2 : (1,2), 4 : (2,2), 16 : (4,4)}
 
     fig, axes = plt.subplots(*axmap[nspecs])
+    if not isinstance(axes, np.ndarray) : axes = np.array(axes)
     fig.set_tight_layout(True)
 
     lines = []
