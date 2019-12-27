@@ -10,7 +10,7 @@ parser.add_argument("-i", "--ip", dest="ip", required=True,
     help="ROACH IP address.")
 parser.add_argument("-b", "--bof", dest="boffile",
     help="boffile to load into the FPGA.")
-parser.add_argument("-r", "--rver", dest="roach_version", type=int, default=2,
+parser.add_argument("-r", "--rver", dest="rver", type=int, default=2,
     choices={1,2}, help="ROACH version to use. 1 and 2 supported.")
 parser.add_argument("-sn", "--snapnames", dest="snapnames", nargs="*",
     help="names of snapshot blocks to read.")
@@ -22,13 +22,11 @@ parser.add_argument("-ns", "--nsamples", dest="nsamples", type=int, default=256,
 def main():
     args = parser.parse_args()
     
-    roach = cd.initialize_roach(args.ip, 
-        boffile       = args.boffile, 
-        roach_version = args.roach_version)
-
+    roach = cd.initialize_roach(args.ip, boffile=args.boffile, rver=args.rver)
     fig, lines = create_figure(args.snapnames, args.nsamples, args.dtype)
 
     def animate(_):
+        # get snapshot data
         snapdata_list = cd.read_snapshots(roach, args.snapnames, args.dtype)
         for line, snapdata in zip(lines, snapdata_list):
             line.set_data(range(args.nsamples), snapdata[:args.nsamples])
@@ -37,13 +35,14 @@ def main():
     ani = FuncAnimation(fig, animate, blit=True)
     plt.show()
 
-def create_figure(snapnames, nsamples, dtype_string):
+def create_figure(snapnames, nsamples, dtype):
+    """
+    Create figure with the proper axes settings for plotting snaphots.
+    """
     axmap = {1 : (1,1), 2 : (1,2), 4 : (2,2), 16 : (4,4)}
-    dtype = np.dtype(dtype_string)
     nsnapshots = len(snapnames)
 
-    fig, axes = plt.subplots(*axmap[nsnapshots])
-    if not isinstance(axes, np.ndarray) : axes = np.array(axes)
+    fig, axes = plt.subplots(*axmap[nsnapshots], squeeze=False)
     fig.set_tight_layout(True)
 
     lines = []

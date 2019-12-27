@@ -4,8 +4,9 @@ Main calandigital script with helper functions.
 import sys, time, imp
 import corr
 import numpy as np
+import vxi11
 
-def initialize_roach(ip, port=7147, boffile=None, roach_version=2):
+def initialize_roach(ip, port=7147, boffile=None, rver=2):
     """
     Initializes ROACH, that is, start ROACH communication, program boffile
     into the FPGA, and creates the FpgaClient object to communicate with.
@@ -13,7 +14,7 @@ def initialize_roach(ip, port=7147, boffile=None, roach_version=2):
     :param port: ROCH TCP/IP port for communication.
     :param boffile: .bof file to program the FPGA. If None porgramming 
         is skipped.
-    :param roach_version: version of the ROACH, 1 and 2 supported.
+    :param rver: version of the ROACH, 1 and 2 supported.
     :return: FpgaClient object to communicate with ROACH's FPGA.
     """
     print("Initializing ROACH communication...")
@@ -108,21 +109,21 @@ def read_interleave_data(roach, brams, awidth, dwidth, dtype):
     return interleaved_data
 
 def scale_and_dBFS_specdata(data, acclen, nbits, nchannels):
-        """
-        Scales spectral data by an accumulation length, and converts
-        the data to dBFS. Used for plotting spectra.
-        :param data: spectral data to convert. Must be Numpy array.
-        :param acclen: accumulation length of spectrometer. 
-            Used to scale the data.
-        :param nbits: number of bits used to sample the data (ADC bits).
-        :param nchannels: number of channels of the spectrometer.
-        :return: scaled data in dBFS.
-        """
-        # scale data 
-        data = data / acclen
+    """
+    Scales spectral data by an accumulation length, and converts
+    the data to dBFS. Used for plotting spectra.
+    :param data: spectral data to convert. Must be Numpy array.
+    :param acclen: accumulation length of spectrometer. 
+        Used to scale the data.
+    :param nbits: number of bits used to sample the data (ADC bits).
+    :param nchannels: number of channels of the spectrometer.
+    :return: scaled data in dBFS.
+    """
+    # scale data 
+    data = data / acclen
 
-        # convert data to dBFS
-        dBFS = 6.02*nbits + 1.76 + 10*np.log10(nchannels)
-        data = 10*np.log10(data+1) - dBFS
+    # convert data to dBFS
+    dBFS = 6.02*nbits + 1.76 + 10*np.log10(nchannels)
+    data = 10*np.log10(data+1) - dBFS
 
-        return data
+    return data

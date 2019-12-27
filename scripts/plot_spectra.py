@@ -10,7 +10,7 @@ parser.add_argument("-i", "--ip", dest="ip", required=True,
     help="ROACH IP address.")
 parser.add_argument("-b", "--bof", dest="boffile",
     help="boffile to load into the FPGA.")
-parser.add_argument("-r", "--rver", dest="roach_version", type=int, default=2,
+parser.add_argument("-r", "--rver", dest="rver", type=int, default=2,
     choices={1,2}, help="ROACH version to use. 1 and 2 supported.")
 parser.add_argument("-bn", "--bramnames", dest="bramnames", nargs="*",
     help="names of bram blocks to read.")
@@ -35,11 +35,10 @@ parser.add_argument("-al", "--acclen", dest="acclen", type=int, default=2**16,
 
 def main():
     args = parser.parse_args()
-    
-    roach = cd.initialize_roach(args.ip, 
-        boffile       = args.boffile, 
-        roach_version = args.roach_version)
 
+    roach = cd.initialize_roach(args.ip, boffile=args.boffile, rver=args.rver)
+
+    # useful parameters
     nbrams         = len(args.bramnames) / args.nspecs
     specbrams_list = [args.bramnames[i*nbrams:(i+1)*nbrams] for i in range(args.nspecs)]
     nchannels      = 2**args.awidth * nbrams 
@@ -56,6 +55,7 @@ def main():
 
     def animate(_):
         for line, specbrams in zip(lines, specbrams_list):
+            # get spectral data
             specdata = cd.read_interleave_data(roach, specbrams, 
                 args.awidth, args.dwidth, args.dtype)
             specdata = cd.scale_and_dBFS_specdata(specdata, args.acclen, 
@@ -67,10 +67,12 @@ def main():
     plt.show()
 
 def create_figure(nspecs, bandwidth, dBFS):
+    """
+    Create figure with the proper axes settings for plotting spectra.
+    """
     axmap = {1 : (1,1), 2 : (1,2), 4 : (2,2), 16 : (4,4)}
 
-    fig, axes = plt.subplots(*axmap[nspecs])
-    if not isinstance(axes, np.ndarray) : axes = np.array(axes)
+    fig, axes = plt.subplots(*axmap[nspecs], squeeze=False)
     fig.set_tight_layout(True)
 
     lines = []
