@@ -1,5 +1,6 @@
-import argparse, vxi11
+import argparse, vxi11, timedate
 import calandigital as cd
+from calandigital.adc5g_devel.ADCCalibrate import ADCCalibrate
 import numpy as np
 import matplotlib.pyplot as plt
 import adc5g
@@ -19,6 +20,12 @@ parser.add_argument("-gp", "--genpow", dest="genpow",
 parser.add_argument("-s0", "--zdok0snaps", dest="zdok0snaps", nargs="*", default=[],
     help="Names of snapshot blocks (1 or 2) for zdok0 inputs.")
 parser.add_argument("-s1", "--zdok1snaps", dest="zdok1snaps", nargs="*", default=[],
+    help="Names of snapshot blocks (1 or 2) for zdok1 inputs.")
+parser.add_argument("-dm", "--do_mmcm", dest="do_mmcm", action="store_true",
+    help="If used, do MMCM calibration")
+parser.add_argument("-do", "--do_ogp", dest="do_ogp", action="store_true",
+    help="If used, do OGP calibration")
+parser.add_argument("-di", "--do_inl", dest="do_inl", action="store_true",
     help="If used, do INL calibration")
 parser.add_argument("-lo", "--load_ogp", dest="load_ogp", action="store_true",
     help="If used, load OGP calibration.")
@@ -43,6 +50,8 @@ def main():
     
     roach = cd.initialize_roach(args.ip, boffile=args.boffile, rver=2)
     snapnames = args.zdok0snaps + args.zdok1snaps
+    now = datetime.datetime.now()
+    caldir = args.caldir + '_' + self.now.strftime('%Y-%m-%d %H:%M:%S')
 
     # turn on generator if IP was given
     if args.generator_ip is not None:
@@ -59,32 +68,41 @@ def main():
     if args.plot_snapshots:
         snapfig, snaplines_uncal, snaplines_cal = create_snap_figure(snapnames, 
             args.nsamples)
-        
-        for line, snapdata in zip(snaplines_uncal, snapdata_list):
-            line.set_data(range(args.nsamples), snapdata[:args.nsamples])
+        plot_snapshots(snaplines_uncal, snapdata_list, args.nsamples)
         snapfig.canvas.draw()
     
     # plot uncalibrated spectral data
     if args.plot_spectra:
-        # useful parameters for spectra plotting
-        nchannels = len(snapdata)/2
-        dBFS      = 6.02*8 + 1.76 + 10*np.log10(nchannels)
+        dBFS = 6.02*8 + 1.76 + 10*np.log10(len(snapdata_list[0])/2)
         specfig, speclines_uncal, speclines_cal = create_spec_figure(snapnames, 
             args.bandwidth, dBFS)
-        
-        freqs = np.linspace(0, args.bandwidth, nchannels, endpoint=False)
-        for line, snapdata in zip(speclines_uncal, snapdata_list):
-            # compute the fft of snapshot data
-            uncal_spec = np.square(np.abs(np.fft.rfft(snapdata)[:-1]))
-            uncal_spec = cd.scale_and_dBFS_specdata(uncal_spec, nchannels, 8, nchannels)
-            line.set_data(freqs, uncal_spec)
+        plot_spectra(speclines_uncal, snapdata_list, args.bandwidth, nchannels)
         specfig.canvas.draw()
 
-    # first do MMCM calibration (always necessary)
-    if args.zdok0snaps: # if list is not empty
-        perform_mmcm_calibration(roach, 0, args.zdok0snaps)
-    if args.zdok1snaps: # if list is not empty
-        perform_mmcm_calibration(roach, 1, args.zdok1snaps)
+    # do MMCM calibration
+    if args.do_mmcm:
+        if args.zdok0snaps:
+            perform_mmcm_calibration(roach, 0, args.zdok0snaps)
+        if args.zdok1snaps:
+            perform_mmcm_calibration(roach, 1, args.zdok1snaps)
+
+    # do ogp calibration
+    if args.do_ogp:
+        if args.zdok0snaps:
+            perform_ogp_calibration(0, args.zdok0snaps[0], roach, caldir, now, 
+                args.bandwidth, args.genfreq)
+        if args.zdok1snaps:
+            perform_ogp_calibration(1, args.zdok1snaps[0], roach, caldir, now, 
+                args.bandwidth, args.genfreq)
+
+     # do inl calibration
+    if args.do_inl:
+        if args.zdok0snaps:
+            perform_inl_calibration(0, args.zdok0snaps[0], roach, caldir, now, 
+                args.bandwidth)
+        if args.zdok1snaps:
+            perform_inl_calibration(1, args.zdok1snaps[0], roach, caldir, now, 
+                args.bandwidth)
 
     # get calibrated data if we want to plot
     if args.plot_snapshots or args.plot_spectra:
@@ -92,17 +110,12 @@ def main():
 
     # plot calibrated snap data
     if args.plot_snapshots:
-        for line, snapdata in zip(snaplines_cal, snapdata_list):
-            line.set_data(range(args.nsamples), snapdata[:args.nsamples])
+        plot_snapshots(snaplines_cal, snapdata_list, args.nsamples)
         snapfig.canvas.draw()
 
     # plot calibrated spectral data
     if args.plot_spectra:
-        for line, snapdata in zip(speclines_cal, snapdata_list):
-            # compute the fft of snapshot data
-            uncal_spec = np.square(np.abs(np.fft.rfft(snapdata)[:-1]))
-            uncal_spec = cd.scale_and_dBFS_specdata(uncal_spec, nchannels, 8, nchannels)
-            line.set_data(freqs, uncal_spec)
+        plot_spectra(speclines_cal, snapdata_list, args.bandwidth, nchannels)
         specfig.canvas.draw()
 
     # turn off generator if IP was given
@@ -172,6 +185,32 @@ def create_spec_figure(specnames, bandwidth, dBFS):
 
     return fig, lines_uncal, lines_cal
 
+def plot_snapshots(lines, snapdata_list, nsamples):
+    """
+    Plot snapshot data in figure.
+    :param lines: matplotlib lines where to set the data.
+    :param snapdata_list: list of data to plot.
+    :param nsamples: number of samples og the snapshot to plot.
+    """
+    for line, snapdata in zip(lines, data_list):
+        line.set_data(range(nsamples), snapdata[:nsamples])
+
+def plot_spectra(lines, snapdata_list, bandwidth, nchannels):
+    """
+    Plot spectra data in figure.
+    :param lines: matplotlib lines where to set the data.
+    :param snapdata_list: list of data to plot.
+    :param bandwidth: spectral data bandwidth.
+    :param nchannels: number of bins in spectra.
+    """
+    nchannels = len(data_list[0])/2
+    freqs = np.linspace(0, bandwidth, nchannels, endpoint=False)
+    for line, snapdata in zip(lines, snapdata_list):
+       # compute the fft of snapshot data
+       spec = np.square(np.abs(np.fft.rfft(snapdata)[:-1]))
+       spec = cd.scale_and_dBFS_specdata(spec, nchannels, 8, nchannels)
+       line.set_data(freqs, spec)
+
 def perform_mmcm_calibration(roach, zdok, snapnames):
     """
     Perform MMCM calibration using Primiani's adc5g package.
@@ -187,6 +226,37 @@ def perform_mmcm_calibration(roach, zdok, snapnames):
     opt, gliches = adc5g.calibrate_mmcm_phase(roach, zdok, snapnames)
     adc5g.unset_test_mode(roach, zdok)
     print("done")
+
+def perform_ogp_calibration(roach, zdok, snapname, caldir, now, bandwidth, testfreq):
+    """
+    Perform OGP calibration using scraped code from adc5g_devel
+    (https://github.com/nrao/adc5g_devel).
+    :param roach: FpgaClient object used to extract the data.
+    :param zdok: zdok port number of the ADC to calibrate (0 or 1).
+    :param snapname: name of the snapshot block with the calibration data.
+    :param caldir: directory where to save the calibration data.
+    :param now: string with the current date and time.
+    :param bandwidth: bandwidth of the model. Equal to the ADC clockrate.
+    :param testfreq: test tone frequency for the calibration.
+    """
+    adccal = ADCCalibrate(roach=roach, roach_name="", zdok=zdok, 
+        snapshot=snapname, dir=caldir, now=now, clockrate=bandwidth)
+    adccal.do_ogp(zdok, testfreq, 10)
+
+def perform_inl_calibration(roach, zdok, snapname, caldir, now, bandwidth):
+    """
+    Perform INL calibration using scraped code from adc5g_devel
+    (https://github.com/nrao/adc5g_devel).
+    :param roach: FpgaClient object used to extract the data.
+    :param zdok: zdok port number of the ADC to calibrate (0 or 1).
+    :param snapname: name of the snapshot block with the calibration data.
+    :param caldir: directory where to save the calibration data.
+    :param now: string with the current date and time.
+    :param bandwidth: bandwidth of the model. Equal to the ADC clockrate.
+    """
+    adccal = ADCCalibrate(roach=roach, roach_name="", zdok=zdok, 
+        snapshot=snapname, dir=caldir, now=now, clockrate=bandwidth)
+    adccal.do_inl(zdok)
 
 if __name__ == '__main__':
     main()
