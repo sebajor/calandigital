@@ -31,11 +31,11 @@ def initialize_roach(ip, port=7147, boffile=None, rver=2):
 
     if boffile is not None:
         print("Programming boffile " + boffile + " into ROACH...")
-        if roach_version is 1:
+        if rver is 1:
             print("\tUsing ROACH1, programming from ROACH internal memory...")
             roach.progdev(boffile)
             time.sleep(1)
-        elif roach_version is 2:
+        elif rver is 2:
             print("\tUsing ROACH2, programming from PC memory...")
             roach.upload_program_bof(boffile, 60000)
             time.sleep(1)
