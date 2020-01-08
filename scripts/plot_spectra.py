@@ -9,29 +9,29 @@ parser = argparse.ArgumentParser(
 parser.add_argument("-i", "--ip", dest="ip", required=True,
     help="ROACH IP address.")
 parser.add_argument("-b", "--bof", dest="boffile",
-    help="boffile to load into the FPGA.")
+    help="Boffile to load into the FPGA.")
 parser.add_argument("-r", "--rver", dest="rver", type=int, default=2,
     choices={1,2}, help="ROACH version to use. 1 and 2 supported.")
 parser.add_argument("-bn", "--bramnames", dest="bramnames", nargs="*",
-    help="names of bram blocks to read.")
+    help="Names of bram blocks to read.")
 parser.add_argument("-ns", "--nspecs", dest="nspecs", type=int, default=2,
     choices={1,2,4,16}, help="number of independent spectra to plot.")
 parser.add_argument("-dt", "--dtype", dest="dtype", default=">i8",
-    help="data type of bram data. Must be Numpy compatible.")
+    help="Data type of bram data. Must be Numpy compatible.")
 parser.add_argument("-aw", "--addrwidth", dest="awidth", type=int, default=9,
-    help="width of bram address in bits.")
+    help="Width of bram address in bits.")
 parser.add_argument("-dw", "--datawidth", dest="dwidth", type=int, default=64,
-    help="width of bram data in bits.")
-parser.add_argument("-bw", "--bandwidth", dest="bw", type=float, default=1080,
+    help="Width of bram data in bits.")
+parser.add_argument("-bw", "--bandwidth", dest="bandwith", type=float, default=1080,
     help="Bandwidth of the spectra to plot in MHz.")
 parser.add_argument("--nbits", dest="nbits", type=int, default=8,
-    help="number of bits used to sample the data (ADC bits).")
+    help="Number of bits used to sample the data (ADC bits).")
 parser.add_argument("-cr", "--countreg", dest="count_reg", default="cnt_rst",
-    help="counter register name. reset at initialization.")
+    help="Counter register name. Reset at initialization.")
 parser.add_argument("-ar", "--accreg", dest="acc_reg", default="acc_len",
-    help="accumulation register name. set at initialization.")
+    help="Accumulation register name. Set at initialization.")
 parser.add_argument("-al", "--acclen", dest="acclen", type=int, default=2**16,
-    help="accumulation length. set at initialization.")
+    help="Accumulation length. Set at initialization.")
 
 def main():
     args = parser.parse_args()
@@ -42,10 +42,10 @@ def main():
     nbrams         = len(args.bramnames) / args.nspecs
     specbrams_list = [args.bramnames[i*nbrams:(i+1)*nbrams] for i in range(args.nspecs)]
     nchannels      = 2**args.awidth * nbrams 
-    freqs          = np.linspace(0, args.bw, nchannels, endpoint=False)
+    freqs          = np.linspace(0, args.bandwith, nchannels, endpoint=False)
     dBFS           = 6.02*args.nbits + 1.76 + 10*np.log10(nchannels)
 
-    fig, lines = create_figure(args.nspecs, args.bw, dBFS)
+    fig, lines = create_figure(args.nspecs, args.bandwidth, dBFS)
 
     print("Setting and resetting registers...")
     roach.write_int(args.acc_reg, args.acclen)
