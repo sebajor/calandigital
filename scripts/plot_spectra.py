@@ -22,7 +22,7 @@ parser.add_argument("-aw", "--addrwidth", dest="awidth", type=int, default=9,
     help="Width of bram address in bits.")
 parser.add_argument("-dw", "--datawidth", dest="dwidth", type=int, default=64,
     help="Width of bram data in bits.")
-parser.add_argument("-bw", "--bandwidth", dest="bandwith", type=float, default=1080,
+parser.add_argument("-bw", "--bandwidth", dest="bandwidth", type=float, default=1080,
     help="Bandwidth of the spectra to plot in MHz.")
 parser.add_argument("--nbits", dest="nbits", type=int, default=8,
     help="Number of bits used to sample the data (ADC bits).")
@@ -42,7 +42,7 @@ def main():
     nbrams         = len(args.bramnames) / args.nspecs
     specbrams_list = [args.bramnames[i*nbrams:(i+1)*nbrams] for i in range(args.nspecs)]
     nchannels      = 2**args.awidth * nbrams 
-    freqs          = np.linspace(0, args.bandwith, nchannels, endpoint=False)
+    freqs          = np.linspace(0, args.bandwidth, nchannels, endpoint=False)
     dBFS           = 6.02*args.nbits + 1.76 + 10*np.log10(nchannels)
 
     fig, lines = create_figure(args.nspecs, args.bandwidth, dBFS)

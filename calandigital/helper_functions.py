@@ -19,7 +19,7 @@ def initialize_roach(ip, port=7147, boffile=None, rver=2):
     """
     print("Initializing ROACH communication...")
     roach = corr.katcp_wrapper.FpgaClient(ip, port)
-    time.sleep(0.1)
+    time.sleep(0.5)
     if not roach.is_connected():
         print("Unable to connect to ROACH :/")
         print("Possible causes:")
