@@ -66,7 +66,7 @@ def main():
     
     # plot uncalibrated spectral data
     if args.plot_spectra:
-        # useful parameters for spectra ploting
+        # useful parameters for spectra plotting
         nchannels = len(snapdata)/2
         dBFS      = 6.02*8 + 1.76 + 10*np.log10(nchannels)
         specfig, speclines_uncal, speclines_cal = create_spec_figure(snapnames, 
