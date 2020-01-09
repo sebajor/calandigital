@@ -86,23 +86,36 @@ def main():
         if args.zdok1snaps:
             perform_mmcm_calibration(roach, 1, args.zdok1snaps)
 
+    # create ADCCalibrate objects if necesarry
+    if args.do_ogp or args.do_inl or args.load_ogp or args.load_inl:
+        if args.zdok0snaps:
+            adccal0 = ADCCalibrate(roach=roach, roach_name="", zdok=0, 
+                snapshot=args.adok0snaps[0], dir=caldir, now=now, 
+                clockrate=args.bandwidth)
+        if args.zdok1snaps:
+            adccal1 = ADCCalibrate(roach=roach, roach_name="", zdok=1, 
+                snapshot=args.adok1snaps[0], dir=caldir, now=now, 
+                clockrate=args.bandwidth)
+
     # do ogp calibration
     if args.do_ogp:
         if args.zdok0snaps:
-            perform_ogp_calibration(0, args.zdok0snaps[0], roach, caldir, now, 
-                args.bandwidth, args.genfreq)
+            adccal0.do_ogp(0, args.genfreq, 10)
         if args.zdok1snaps:
-            perform_ogp_calibration(1, args.zdok1snaps[0], roach, caldir, now, 
-                args.bandwidth, args.genfreq)
+            adccal1.do_ogp(1, args.genfreq, 10)
 
      # do inl calibration
     if args.do_inl:
         if args.zdok0snaps:
-            perform_inl_calibration(0, args.zdok0snaps[0], roach, caldir, now, 
-                args.bandwidth)
+            adccal0.do_inl(0)
         if args.zdok1snaps:
-            perform_inl_calibration(1, args.zdok1snaps[0], roach, caldir, now, 
-                args.bandwidth)
+            adccal1.do_inl(1)
+
+    # compress calibrated data
+
+    # load ogp calibration
+
+    # load inl calibration
 
     # get calibrated data if we want to plot
     if args.plot_snapshots or args.plot_spectra:
@@ -121,10 +134,6 @@ def main():
     # turn off generator if IP was given
     if args.generator_ip is not None:
         generator.write("outp off")
-
-    # create calibration folder
-    #if args.do_ogp or args.do_inl:
-    #    os.mkdir(args.caldir)
 
     print("Done with all calibrations.")
     if args.plot_snapshots or args.plot_spectra:
@@ -226,37 +235,6 @@ def perform_mmcm_calibration(roach, zdok, snapnames):
     opt, gliches = adc5g.calibrate_mmcm_phase(roach, zdok, snapnames)
     adc5g.unset_test_mode(roach, zdok)
     print("done")
-
-def perform_ogp_calibration(roach, zdok, snapname, caldir, now, bandwidth, testfreq):
-    """
-    Perform OGP calibration using scraped code from adc5g_devel
-    (https://github.com/nrao/adc5g_devel).
-    :param roach: FpgaClient object used to extract the data.
-    :param zdok: zdok port number of the ADC to calibrate (0 or 1).
-    :param snapname: name of the snapshot block with the calibration data.
-    :param caldir: directory where to save the calibration data.
-    :param now: string with the current date and time.
-    :param bandwidth: bandwidth of the model. Equal to the ADC clockrate.
-    :param testfreq: test tone frequency for the calibration.
-    """
-    adccal = ADCCalibrate(roach=roach, roach_name="", zdok=zdok, 
-        snapshot=snapname, dir=caldir, now=now, clockrate=bandwidth)
-    adccal.do_ogp(zdok, testfreq, 10)
-
-def perform_inl_calibration(roach, zdok, snapname, caldir, now, bandwidth):
-    """
-    Perform INL calibration using scraped code from adc5g_devel
-    (https://github.com/nrao/adc5g_devel).
-    :param roach: FpgaClient object used to extract the data.
-    :param zdok: zdok port number of the ADC to calibrate (0 or 1).
-    :param snapname: name of the snapshot block with the calibration data.
-    :param caldir: directory where to save the calibration data.
-    :param now: string with the current date and time.
-    :param bandwidth: bandwidth of the model. Equal to the ADC clockrate.
-    """
-    adccal = ADCCalibrate(roach=roach, roach_name="", zdok=zdok, 
-        snapshot=snapname, dir=caldir, now=now, clockrate=bandwidth)
-    adccal.do_inl(zdok)
 
 if __name__ == '__main__':
     main()
