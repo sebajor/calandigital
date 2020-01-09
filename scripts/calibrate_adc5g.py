@@ -1,4 +1,4 @@
-import argparse, vxi11, timedate
+import argparse, vxi11, os, datetime, tarfile, shutil
 import calandigital as cd
 from calandigital.adc5g_devel.ADCCalibrate import ADCCalibrate
 import numpy as np
@@ -13,7 +13,7 @@ parser.add_argument("-b", "--bof", dest="boffile",
     help="Boffile to load into the FPGA.")
 parser.add_argument("-g", "--genip", dest="generator_ip",
     help="Generator IP. Skip if generator is used manually.")
-parser.add_argument("-gf", "--genfreq", dest="genfreq", 
+parser.add_argument("-gf", "--genfreq", dest="genfreq", type=float,
     help="Frequency (MHz) to set at the generator to perform the calibration.")
 parser.add_argument("-gp", "--genpow", dest="genpow", 
     help="Power (dBm) to set at the generator to perform the calibration.")
@@ -51,7 +51,7 @@ def main():
     roach = cd.initialize_roach(args.ip, boffile=args.boffile, rver=2)
     snapnames = args.zdok0snaps + args.zdok1snaps
     now = datetime.datetime.now()
-    caldir = args.caldir + '_' + self.now.strftime('%Y-%m-%d %H:%M:%S')
+    caldir = args.caldir + ' ' + now.strftime('%Y-%m-%d %H:%M:%S')
 
     # turn on generator if IP was given
     if args.generator_ip is not None:
@@ -76,7 +76,7 @@ def main():
         dBFS = 6.02*8 + 1.76 + 10*np.log10(len(snapdata_list[0])/2)
         specfig, speclines_uncal, speclines_cal = create_spec_figure(snapnames, 
             args.bandwidth, dBFS)
-        plot_spectra(speclines_uncal, snapdata_list, args.bandwidth, nchannels)
+        plot_spectra(speclines_uncal, snapdata_list, args.bandwidth)
         specfig.canvas.draw()
 
     # do MMCM calibration
@@ -90,47 +90,72 @@ def main():
     if args.do_ogp or args.do_inl or args.load_ogp or args.load_inl:
         if args.zdok0snaps:
             adccal0 = ADCCalibrate(roach=roach, roach_name="", zdok=0, 
-                snapshot=args.adok0snaps[0], dir=caldir, now=now, 
+                snapshot=args.zdok0snaps[0], dir=caldir, now=now, 
                 clockrate=args.bandwidth)
         if args.zdok1snaps:
             adccal1 = ADCCalibrate(roach=roach, roach_name="", zdok=1, 
-                snapshot=args.adok1snaps[0], dir=caldir, now=now, 
+                snapshot=args.zdok1snaps[0], dir=caldir, now=now, 
                 clockrate=args.bandwidth)
+
+    # create calibration folder if necesary
+    if args.do_ogp or args.do_inl:
+        os.mkdir(caldir)
 
     # do ogp calibration
     if args.do_ogp:
         if args.zdok0snaps:
+            print("Performing ADC5G OGP calibration, ZDOK0...")
             adccal0.do_ogp(0, args.genfreq, 10)
+            print("done")
         if args.zdok1snaps:
+            print("Performing ADC5G OGP calibration, ZDOK1...")
             adccal1.do_ogp(1, args.genfreq, 10)
+            print("done")
 
      # do inl calibration
     if args.do_inl:
         if args.zdok0snaps:
+            print("Performing ADC5G INL calibration, ZDOK0...")
             adccal0.do_inl(0)
+            print("done")
         if args.zdok1snaps:
+            print("Performing ADC5G INL calibration, ZDOK1...")
             adccal1.do_inl(1)
+            print("done")
 
     # compress calibrated data
+    if args.do_ogp or args.do_inl:
+        compress_data(caldir)
 
     # decompress calibration if loading is issued
     if (args.load_ogp and not args.do_ogp) or (args.load_inl and not args.do_inl):
-        #decompress args.loaddir
-        pass
+        uncompress_data(args.loaddir)
 
     # load ogp calibration
     if args.load_ogp and not args.do_ogp:
         if args.zdok0snaps:
-            adccal0.load_calibrations(loaddir, 0, ['ogp'])
+            print("Loading ADC5G OGP calibration, ZDOK0...")
+            adccal0.load_calibrations(args.loaddir, 0, ['ogp'])
+            print("done")
         if args.zdok1snaps:
-            adccal1.load_calibrations(loaddir, 1, ['ogp'])
+            print("Loading ADC5G OGP calibration, ZDOK1...")
+            adccal1.load_calibrations(args.loaddir, 1, ['ogp'])
+            print("done")
 
     # load inl calibration
     if args.load_inl and not args.do_inl:
         if args.zdok0snaps:
-            adccal0.load_calibrations(loaddir, 0, ['inl'])
+            print("Loading ADC5G INL calibration, ZDOK0...")
+            adccal0.load_calibrations(args.loaddir, 0, ['inl'])
+            print("done")
         if args.zdok1snaps:
-            adccal1.load_calibrations(loaddir, 1, ['inl'])
+            print("Loading ADC5G INL calibration, ZDOK1...")
+            adccal1.load_calibrations(args.loaddir, 1, ['inl'])
+            print("done")
+
+    # delete uncompressed data
+    if (args.load_ogp and not args.do_ogp) or (args.load_inl and not args.do_inl):
+        shutil.rmtree(args.loaddir)
 
     # get calibrated data if we want to plot
     if args.plot_snapshots or args.plot_spectra:
@@ -143,7 +168,7 @@ def main():
 
     # plot calibrated spectral data
     if args.plot_spectra:
-        plot_spectra(speclines_cal, snapdata_list, args.bandwidth, nchannels)
+        plot_spectra(speclines_cal, snapdata_list, args.bandwidth)
         specfig.canvas.draw()
 
     # turn off generator if IP was given
@@ -216,18 +241,17 @@ def plot_snapshots(lines, snapdata_list, nsamples):
     :param snapdata_list: list of data to plot.
     :param nsamples: number of samples og the snapshot to plot.
     """
-    for line, snapdata in zip(lines, data_list):
+    for line, snapdata in zip(lines, snapdata_list):
         line.set_data(range(nsamples), snapdata[:nsamples])
 
-def plot_spectra(lines, snapdata_list, bandwidth, nchannels):
+def plot_spectra(lines, snapdata_list, bandwidth):
     """
     Plot spectra data in figure.
     :param lines: matplotlib lines where to set the data.
     :param snapdata_list: list of data to plot.
     :param bandwidth: spectral data bandwidth.
-    :param nchannels: number of bins in spectra.
     """
-    nchannels = len(data_list[0])/2
+    nchannels = len(snapdata_list[0])/2
     freqs = np.linspace(0, bandwidth, nchannels, endpoint=False)
     for line, snapdata in zip(lines, snapdata_list):
        # compute the fft of snapshot data
@@ -250,6 +274,26 @@ def perform_mmcm_calibration(roach, zdok, snapnames):
     opt, gliches = adc5g.calibrate_mmcm_phase(roach, zdok, snapnames)
     adc5g.unset_test_mode(roach, zdok)
     print("done")
+
+def compress_data(datadir):
+    """
+    Compress the data from the datadir directory into a .tar.gz
+    file and delete the original directory.
+    """
+    tar = tarfile.open(datadir + ".tar.gz", "w:gz")
+    for datafile in os.listdir(datadir):
+        tar.add(datadir + '/' + datafile, datafile)
+    tar.close()
+    shutil.rmtree(datadir)
+
+def uncompress_data(datadir):
+    """
+    Uncompress .tar.gz data from the datadir directory.
+    """
+    os.mkdir(datadir)
+    tar = tarfile.open(datadir + ".tar.gz")
+    tar.extractall(datadir)
+    tar.close()
 
 if __name__ == '__main__':
     main()
