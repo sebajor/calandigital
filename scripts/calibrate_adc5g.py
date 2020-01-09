@@ -113,9 +113,24 @@ def main():
 
     # compress calibrated data
 
+    # decompress calibration if loading is issued
+    if (args.load_ogp and not args.do_ogp) or (args.load_inl and not args.do_inl):
+        #decompress args.loaddir
+        pass
+
     # load ogp calibration
+    if args.load_ogp and not args.do_ogp:
+        if args.zdok0snaps:
+            adccal0.load_calibrations(loaddir, 0, ['ogp'])
+        if args.zdok1snaps:
+            adccal1.load_calibrations(loaddir, 1, ['ogp'])
 
     # load inl calibration
+    if args.load_inl and not args.do_inl:
+        if args.zdok0snaps:
+            adccal0.load_calibrations(loaddir, 0, ['inl'])
+        if args.zdok1snaps:
+            adccal1.load_calibrations(loaddir, 1, ['inl'])
 
     # get calibrated data if we want to plot
     if args.plot_snapshots or args.plot_spectra:
