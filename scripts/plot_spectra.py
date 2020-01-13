@@ -16,8 +16,6 @@ parser.add_argument("-bn", "--bramnames", dest="bramnames", nargs="*",
     help="Names of bram blocks to read.")
 parser.add_argument("-ns", "--nspecs", dest="nspecs", type=int, default=2,
     choices={1,2,4,16}, help="number of independent spectra to plot.")
-parser.add_argument("-dt", "--dtype", dest="dtype", default=">i8",
-    help="Data type of bram data. Must be Numpy compatible.")
 parser.add_argument("-aw", "--addrwidth", dest="awidth", type=int, default=9,
     help="Width of bram address in bits.")
 parser.add_argument("-dw", "--datawidth", dest="dwidth", type=int, default=64,
@@ -36,28 +34,33 @@ parser.add_argument("-al", "--acclen", dest="acclen", type=int, default=2**16,
 def main():
     args = parser.parse_args()
 
+    # initialize roach
     roach = cd.initialize_roach(args.ip, boffile=args.boffile, rver=args.rver)
 
     # useful parameters
     nbrams         = len(args.bramnames) / args.nspecs
     specbrams_list = [args.bramnames[i*nbrams:(i+1)*nbrams] for i in range(args.nspecs)]
+    dtype          = '>u' + args.dwidth/8
     nchannels      = 2**args.awidth * nbrams 
     freqs          = np.linspace(0, args.bandwidth, nchannels, endpoint=False)
     dBFS           = 6.02*args.nbits + 1.76 + 10*np.log10(nchannels)
 
+    # create figure
     fig, lines = create_figure(args.nspecs, args.bandwidth, dBFS)
-
+    
+    # initial setting of registers
     print("Setting and resetting registers...")
     roach.write_int(args.acc_reg, args.acclen)
     roach.write_int(args.count_reg, 1)
     roach.write_int(args.count_reg, 0)
     print("done")
 
+    # animation definition
     def animate(_):
         for line, specbrams in zip(lines, specbrams_list):
             # get spectral data
             specdata = cd.read_interleave_data(roach, specbrams, 
-                args.awidth, args.dwidth, args.dtype)
+                args.awidth, args.dwidth, dtype)
             specdata = cd.scale_and_dBFS_specdata(specdata, args.acclen, 
                 args.nbits, nchannels)
             line.set_data(freqs, specdata)

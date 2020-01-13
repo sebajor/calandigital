@@ -2,6 +2,7 @@ construct==2.5.3
 katcp==0.5.5
 h5py
 numpy
+scipy
 matplotlib
 pyserial
 python-vxi11

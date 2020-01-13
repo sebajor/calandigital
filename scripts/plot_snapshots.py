@@ -22,9 +22,13 @@ parser.add_argument("-ns", "--nsamples", dest="nsamples", type=int, default=256,
 def main():
     args = parser.parse_args()
     
+    # initialize roach
     roach = cd.initialize_roach(args.ip, boffile=args.boffile, rver=args.rver)
+    
+    # create figure
     fig, lines = create_figure(args.snapnames, args.nsamples, args.dtype)
 
+    # animation definition
     def animate(_):
         # get snapshot data
         snapdata_list = cd.read_snapshots(roach, args.snapnames, args.dtype)

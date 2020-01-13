@@ -1,4 +1,4 @@
-import argparse, vxi11, os, datetime, tarfile, shutil
+import argparse, os, datetime, tarfile, shutil
 import calandigital as cd
 from calandigital.adc5g_devel.ADCCalibrate import ADCCalibrate
 import numpy as np
@@ -48,17 +48,19 @@ parser.add_argument("-ld", "--loaddir", dest="loaddir", default="adc5gcal",
 def main():
     args = parser.parse_args()
     
+    # initialize roach
     roach = cd.initialize_roach(args.ip, boffile=args.boffile, rver=2)
+
+    # useful parameters
     snapnames = args.zdok0snaps + args.zdok1snaps
     now = datetime.datetime.now()
     caldir = args.caldir + ' ' + now.strftime('%Y-%m-%d %H:%M:%S')
 
-    # turn on generator if IP was given
-    if args.generator_ip is not None:
-        generator = vxi11.Instrument(args.generator_ip)
-        generator.write("freq " +str(args.genfreq) + " mhz")
-        generator.write("power " +str(args.genpow) + " dbm")
-        generator.ask("outp on;*opc?")
+    # turn on generator
+    generator = cd.Instrument(args.generator_ip)
+    generator.write("freq " +str(args.genfreq) + " mhz")
+    generator.write("power " +str(args.genpow) + " dbm")
+    generator.ask("outp on;*opc?")
 
     # get uncalibrated data if we want to plot
     if args.plot_snapshots or args.plot_spectra:
@@ -171,9 +173,8 @@ def main():
         plot_spectra(speclines_cal, snapdata_list, args.bandwidth)
         specfig.canvas.draw()
 
-    # turn off generator if IP was given
-    if args.generator_ip is not None:
-        generator.write("outp off")
+    # turn off generator
+    generator.write("outp off")
 
     print("Done with all calibrations.")
     if args.plot_snapshots or args.plot_spectra:
