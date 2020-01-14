@@ -61,8 +61,7 @@ def main():
             # get spectral data
             specdata = cd.read_interleave_data(roach, specbrams, 
                 args.awidth, args.dwidth, dtype)
-            specdata = cd.scale_and_dBFS_specdata(specdata, args.acclen, 
-                args.nbits, nchannels)
+            specdata = cd.scale_and_dBFS_specdata(specdata, args.acclen, dBFS)
             line.set_data(freqs, specdata)
         return lines
 

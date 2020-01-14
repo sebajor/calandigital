@@ -2,6 +2,7 @@ import argparse, vxi11
 import calandigital as cd
 import numpy as np
 import matplotlib.pyplot as plt
+import scipy
 
 parser = argparse.ArgumentParser(
     description="Synchronize 2 ADC5G ADCs in ROACH2.")
@@ -33,6 +34,9 @@ parser.add_argument("-cr", "--countreg", dest="count_reg", default="cnt_rst",
     help="Counter register name. Reset at initialization.")
 parser.add_argument("-ar", "--accreg", dest="acc_reg", default="acc_len",
     help="Accumulation register name. Set at initialization.")
+parser.add_argument("-sr", "--syncregs", dest="sync_regs", nargs="*", 
+    default=["delay_adc0", "delay_adc1"],
+    help="Delay regiters. Define the amount of delay for each ADC.")
 parser.add_argument("-al", "--acclen", dest="acclen", type=int, default=2**16,
     help="Accumulation length. Set at initialization.")
 parser.add_argument("-stc", "--startchnl", dest="startchnl", type=int, default=1,
@@ -74,8 +78,6 @@ def main():
     roach.write_int(args.count_reg, 0)
     print("done")
 
-
-
     # Main synchronization loop
     print "Synchronizing ADCs..."
     time.sleep(pause_time) 
@@ -108,9 +110,29 @@ def main():
             ratios.append(np.conj(ab[chnl]) / aa[chnl]) # (ab*)* / aa* = a*b / aa* = b/a
 
             # plot spectra
+            spec_zdok0 = cd.scale_dbfs_spec_data(aa, args.acclen, dBFS)
+            lines[0].set_data(freqs, spec_zdok0)
+            spec_zdok1 = cd.scale_dbfs_spec_data(bb, args.acclen, dBFS)
+            lines[1].set_data(freqs, spec_zdok1)
 
+            # plot mag ratio and angle diff
+            lines[2].set_data(test_freqs[:i+1], np.abs(ratios))
+            lines[3].set_data(test_freqs[:i+1], np.angle(ratios, deg=True))
 
+            # update plots
+            fig.canvas.draw()
     
+        # get delays between adcs
+        delay = compute_adc_delay(test_freqs, ratios) 
+
+        # check adcs sync status, apply delay if necesary
+        if delay == 0:
+            print("ADCs successfully synthronized!")
+            break
+        elif delay > 0: # if delay is positive adc1 is ahead, hence delay adc1
+            roach.write_int('adc1_delay', delay)
+        else: # (delay < 0) if delay is negative adc0 is ahead, hence delay adc0
+            roach.write_int('adc0_delay', -1*delay)
 
     # turn off generator
     generator.write("outp off")
@@ -119,9 +141,10 @@ def create_figure(bandwidth, dBFS, syncfreqs)
     """
     Create figure with the proper axes for the synchronization procedure.
     """
-
     fig, axes = plt.subplot(2, 2, squeeze=False)
     fig.set_tight_layout(True)
+    fig.show()
+    fig.canvas.draw()
 
     # spectral axes
     axes[0,0].set_xlim(0, bandwidth)       ; axes[0,1].set_xlim(0, bandwidth)         
@@ -149,6 +172,24 @@ def create_figure(bandwidth, dBFS, syncfreqs)
     lineang = axes[1,1].plot([], [])     
 
     return fig, [linezdok0, linezdok1, linemag, lineang]
+
+def compute_adc_delay(freqs, ratios):
+    """
+    Compute the adc delay between two unsynchronized adcs. It is done by 
+    computing the slope of the phase difference with respect the frequency, 
+    and then it translates this value into an integer delay in number of 
+    samples.
+    :param freqs: frequency array in which the sideband ratios where computed.
+    :param ratios: complex ratios array of the adcs. The complex ratios is the 
+        complex division of an spectral channel from adc0 with adc1.
+    :return: adc delay in number of samples.
+    """
+    phase_diffs = np.unwrap(np.angle(ratios))
+    linregress_results = scipy.stats.linregress(freqs, phase_diffs)
+    angle_slope = linregress_results.slope
+    delay = int(round(angle_slope * 2*self.settings.bw / (2*np.pi))) # delay = dphi/df * Fs / 2pi
+    print "Computed delay: " + str(delay)
+    return delay
    
 if __name__ == '__main__':
     main()

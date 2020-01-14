@@ -78,7 +78,7 @@ def main():
         dBFS = 6.02*8 + 1.76 + 10*np.log10(len(snapdata_list[0])/2)
         specfig, speclines_uncal, speclines_cal = create_spec_figure(snapnames, 
             args.bandwidth, dBFS)
-        plot_spectra(speclines_uncal, snapdata_list, args.bandwidth)
+        plot_spectra(speclines_uncal, snapdata_list, args.bandwidth, dBFS)
         specfig.canvas.draw()
 
     # do MMCM calibration
@@ -170,7 +170,7 @@ def main():
 
     # plot calibrated spectral data
     if args.plot_spectra:
-        plot_spectra(speclines_cal, snapdata_list, args.bandwidth)
+        plot_spectra(speclines_cal, snapdata_list, args.bandwidth, dBFS)
         specfig.canvas.draw()
 
     # turn off generator
@@ -245,19 +245,20 @@ def plot_snapshots(lines, snapdata_list, nsamples):
     for line, snapdata in zip(lines, snapdata_list):
         line.set_data(range(nsamples), snapdata[:nsamples])
 
-def plot_spectra(lines, snapdata_list, bandwidth):
+def plot_spectra(lines, snapdata_list, bandwidth, dBFS):
     """
     Plot spectra data in figure.
     :param lines: matplotlib lines where to set the data.
     :param snapdata_list: list of data to plot.
     :param bandwidth: spectral data bandwidth.
+    :param dBFS: shift constant to convert data to dBFS.
     """
     nchannels = len(snapdata_list[0])/2
     freqs = np.linspace(0, bandwidth, nchannels, endpoint=False)
     for line, snapdata in zip(lines, snapdata_list):
        # compute the fft of snapshot data
        spec = np.square(np.abs(np.fft.rfft(snapdata)[:-1]))
-       spec = cd.scale_and_dBFS_specdata(spec, nchannels, 8, nchannels)
+       spec = cd.scale_and_dBFS_specdata(spec, nchannels, dBFS)
        line.set_data(freqs, spec)
 
 def perform_mmcm_calibration(roach, zdok, snapnames):

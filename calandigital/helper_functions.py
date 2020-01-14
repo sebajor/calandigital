@@ -115,15 +115,15 @@ def scale_and_dBFS_specdata(data, acclen, nbits, nchannels):
     :param data: spectral data to convert. Must be Numpy array.
     :param acclen: accumulation length of spectrometer. 
         Used to scale the data.
-    :param nbits: number of bits used to sample the data (ADC bits).
-    :param nchannels: number of channels of the spectrometer.
+    :param dBFS: amount to shift the dB data is shifted in order
+        to converted it to dBFS. It is usually computed as: 
+        dBFS = 6.02 adc_bits + 10*log10(spec_channels)
     :return: scaled data in dBFS.
     """
     # scale data 
     data = data / acclen
 
     # convert data to dBFS
-    dBFS = 6.02*nbits + 1.76 + 10*np.log10(nchannels)
     data = 10*np.log10(data+1) - dBFS
 
     return data
