@@ -108,7 +108,7 @@ def read_interleave_data(roach, brams, awidth, dwidth, dtype):
 
     return interleaved_data
 
-def scale_and_dBFS_specdata(data, acclen, nbits, nchannels):
+def scale_and_dBFS_specdata(data, acclen, dBFS):
     """
     Scales spectral data by an accumulation length, and converts
     the data to dBFS. Used for plotting spectra.
