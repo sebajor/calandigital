@@ -13,8 +13,6 @@ parser.add_argument("-b", "--bof", dest="boffile",
 parser.add_argument("-g", "--genip", dest="generator_ip",
     help="Generator IP. Skip if generator is used manually.")
 parser.add_argument("-gf", "--genfreq", dest="genfreq", type=float,
-    help="Frequency (MHz) to set at the generator to perform the calibration.")
-parser.add_argument("-gp", "--genpow", dest="genpow", 
     help="Power (dBm) to set at the generator to perform the calibration.")
 parser.add_argument("-b0", "--zdok0brams", dest="zdok0brams", nargs="*",
     help="Bram names for ZDOK0 spectrum.")
@@ -34,11 +32,11 @@ parser.add_argument("-cr", "--countreg", dest="count_reg", default="cnt_rst",
     help="Counter register name. Reset at initialization.")
 parser.add_argument("-ar", "--accreg", dest="acc_reg", default="acc_len",
     help="Accumulation register name. Set at initialization.")
-parser.add_argument("-sr", "--syncregs", dest="sync_regs", nargs="*", 
-    default=["delay_adc0", "delay_adc1"],
-    help="Delay regiters. Define the amount of delay for each ADC.")
 parser.add_argument("-al", "--acclen", dest="acclen", type=int, default=2**16,
     help="Accumulation length. Set at initialization.")
+parser.add_argument("-dr", "--delayregs", dest="delay_regs", nargs="*", 
+    default=["delay_adc0", "delay_adc1"],
+    help="Delay regiters. Define the amount of delay for each ADC.")
 parser.add_argument("-stc", "--startchnl", dest="startchnl", type=int, default=1,
     help="Start channel for the synchronization sweep.")
 parser.add_argument("-spc", "--stopchnl", dest="stopchnl", type=int, default=2047,
@@ -130,9 +128,9 @@ def main():
             print("ADCs successfully synthronized!")
             break
         elif delay > 0: # if delay is positive adc1 is ahead, hence delay adc1
-            roach.write_int('adc1_delay', delay)
+            roach.write_int(args.delay_regs[1], delay)
         else: # (delay < 0) if delay is negative adc0 is ahead, hence delay adc0
-            roach.write_int('adc0_delay', -1*delay)
+            roach.write_int(args.delay_regs[0], -1*delay)
 
     # turn off generator
     generator.write("outp off")
