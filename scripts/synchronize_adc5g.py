@@ -21,7 +21,7 @@ parser.add_argument("-b1", "--zdok1brams", dest="zdok1brams", nargs="*",
 parser.add_argument("-cbr", "--crossbramsreal", dest="crossbramsreal", nargs="*",
     help="Bram names for cross spectrum, real part.")
 parser.add_argument("-cbi", "--crossbramsimag", dest="crossbramsimag", nargs="*",
-    help="Bram names for cross spectrum, imaginaryb part.")
+    help="Bram names for cross spectrum, imaginary part.")
 parser.add_argument("-aw", "--addrwidth", dest="awidth", type=int, default=9,
     help="Width of bram address in bits.")
 parser.add_argument("-dw", "--datawidth", dest="dwidth", type=int, default=64,
@@ -36,7 +36,7 @@ parser.add_argument("-al", "--acclen", dest="acclen", type=int, default=2**16,
     help="Accumulation length. Set at initialization.")
 parser.add_argument("-dr", "--delayregs", dest="delay_regs", nargs="*", 
     default=["adc0_delay", "adc1_delay"],
-    help="Delay regiters. Define the amount of delay for each ADC.")
+    help="Delay registers. Define the amount of delay for each ADC.")
 parser.add_argument("-stc", "--startchnl", dest="startchnl", type=int, default=1,
     help="Start channel for the synchronization sweep.")
 parser.add_argument("-spc", "--stopchnl", dest="stopchnl", type=int, default=2047,
