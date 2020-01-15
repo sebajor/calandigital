@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import adc5g
 
 parser = argparse.ArgumentParser(
-    description="Calibrate ADC5G from ROACH2 using snapshot information.")
+    description="Calibrate ADC5G ADCs from ROACH2 using snapshot information.")
 parser.add_argument("-i", "--ip", dest="ip", required=True,
     help="ROACH IP address.")
 parser.add_argument("-b", "--bof", dest="boffile",

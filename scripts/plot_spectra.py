@@ -15,14 +15,14 @@ parser.add_argument("-r", "--rver", dest="rver", type=int, default=2,
 parser.add_argument("-bn", "--bramnames", dest="bramnames", nargs="*",
     help="Names of bram blocks to read.")
 parser.add_argument("-ns", "--nspecs", dest="nspecs", type=int, default=2,
-    choices={1,2,4,16}, help="number of independent spectra to plot.")
+    choices={1,2,4,16}, help="Number of independent spectra to plot.")
 parser.add_argument("-aw", "--addrwidth", dest="awidth", type=int, default=9,
     help="Width of bram address in bits.")
 parser.add_argument("-dw", "--datawidth", dest="dwidth", type=int, default=64,
     help="Width of bram data in bits.")
 parser.add_argument("-bw", "--bandwidth", dest="bandwidth", type=float, default=1080,
     help="Bandwidth of the spectra to plot in MHz.")
-parser.add_argument("--nbits", dest="nbits", type=int, default=8,
+parser.add_argument("-nb", "--nbits", dest="nbits", type=int, default=8,
     help="Number of bits used to sample the data (ADC bits).")
 parser.add_argument("-cr", "--countreg", dest="count_reg", default="cnt_rst",
     help="Counter register name. Reset at initialization.")

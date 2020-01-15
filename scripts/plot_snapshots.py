@@ -9,15 +9,15 @@ parser = argparse.ArgumentParser(
 parser.add_argument("-i", "--ip", dest="ip", required=True,
     help="ROACH IP address.")
 parser.add_argument("-b", "--bof", dest="boffile",
-    help="boffile to load into the FPGA.")
+    help="Boffile to load into the FPGA.")
 parser.add_argument("-r", "--rver", dest="rver", type=int, default=2,
     choices={1,2}, help="ROACH version to use. 1 and 2 supported.")
 parser.add_argument("-sn", "--snapnames", dest="snapnames", nargs="*",
-    help="names of snapshot blocks to read.")
+    help="Names of snapshot blocks to read.")
 parser.add_argument("-dt", "--dtype", dest="dtype", default=">i1",
-    help="data type of snapshot data. Must be Numpy compatible.")
+    help="Data type of snapshot data. Must be Numpy compatible.")
 parser.add_argument("-ns", "--nsamples", dest="nsamples", type=int, default=256,
-    help="number of samples of snapshot to plot.")
+    help="Number of samples of snapshot to plot.")
 
 def main():
     args = parser.parse_args()
