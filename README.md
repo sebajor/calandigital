@@ -24,12 +24,12 @@ Installation instruction only for Linux-based system provided:
 ## Helper Functions
 After installation the helper functions can be called from a python script if the calandigital package is imported. These are the currently implemented functions in the calandigital package:
 
-- [x] initialize_roach: starts roach communication and loads boffile
-- [x] read_snapshots: reads data of a list of snapshots blocks
-- [x] read_interleave_data: reads data of a list of brams and then interleaves the data (used for wideband spectrometers).
-- [ ] read_deinterleave_data: reads data of a bram and then deinterleaves the data (used for small spectrometers)
-- [ ] write_deinterleave_data: deinterleaves an array of data and writes it into a list of brams.
-- [x] scale_and_dBFS_specdata: scales data by the accumulation length and converts it to dBFS (dB Full Scale)
+- [x] `initialize_roach`: starts roach communication and loads boffile
+- [x] `read_snapshots`: reads data of a list of snapshots blocks
+- [x] `read_interleave_data`: reads data of a list of brams and then interleaves the data (used for wideband spectrometers).
+- [ ] `read_deinterleave_data`: reads data of a bram and then deinterleaves the data (used for small spectrometers)
+- [ ] `write_deinterleave_data`: deinterleaves an array of data and writes it into a list of brams.
+- [x] `scale_and_dBFS_specdata`: scales data by the accumulation length and converts it to dBFS (dB Full Scale)
 
 For example, if we want to make a script to initialize the ROACH we can write:
 ```python
@@ -42,11 +42,11 @@ Additionally, calandigital provides a Instrument class that uses the [vxi11 pack
 ## Scripts
 After installation, scripts can be run from terminal. For more information use `<script_name> -h`. These are the currently implemented scripts:
 
-- [x] initialize_roach.py: starts roach communication and loads boffile
-- [x] plot_snapshots.py: plot snapshot data from a model snapshot blocks
-- [x] plot_spectra.py: plot spectra data from a model spectrometer model
-- [x] calibrate_adc5g.py: calibrate ADC5G ADCs from a ROACH2
-- [x] synchronize_adc5g.py: synchronize ADC5G ADCs from a ROACH2
+- [x] `initialize_roach.py`: starts roach communication and loads boffile
+- [x] `plot_snapshots.py`: plot snapshot data from a model snapshot blocks
+- [x] `plot_spectra.py`: plot spectra data from a model spectrometer model
+- [x] `calibrate_adc5g.py`: calibrate ADC5G ADCs from a ROACH2
+- [x] `synchronize_adc5g.py`: synchronize ADC5G ADCs from a ROACH2
 
 ## External Links
 * [simulink_models](https://github.com/FrancoCalan/simulink_models): Sister repository with simulink models, compiled .bof files, and script files for various examples and projects.
