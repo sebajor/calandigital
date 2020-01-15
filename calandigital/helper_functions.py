@@ -83,30 +83,69 @@ def read_snapshots(roach, snapshots, dtype='>i1'):
     
     return snapdata_list
 
+def read_data(roach, bram, awidth, dwidth, dtype):
+    """
+    Reads data from a bram in roach.
+    :param roach: CalanFpga object to communicate with ROACH.
+    :param bram: bram name.
+    :param awidth: width of bram address in bits.
+    :param dwidth: width of bram data in bits.
+    :param dtype: data type of data in bram. See read_snapshots().
+    :return: array with the read data.
+    """
+    depth = 2**awidth
+    rawdata  = roach.read(bram, depth*dwidth/8, 0)
+    bramdata = np.frombuffer(rawdata, dtype=dtype)
+    bramdata = bramdata.astype(np.float)
+
+    return bramdata
+
 def read_interleave_data(roach, brams, awidth, dwidth, dtype):
     """
     Reads data from a list of brams and interleave the data in order to return 
     in correctly ordered (as per typical spectrometer models in ROACH).
+    :param roach: CalanFpga object to communicate with ROACH.
     :param brams: list of bram list to read and interleave.
     :param awidth: width of bram address in bits.
     :param dwidth: width of bram data in bits.
-    :param data_type: data type of data in brams. See read_snapshots().
+    :param dtype: data type of data in brams. See read_snapshots().
     :return: array with the read data.
     """
-    depth = 2**awidth
-    bramdata_list = []
-
     # get data
+    bramdata_list = []
     for bram in brams:
-        rawdata  = roach.read(bram, depth*dwidth/8, 0)
-        bramdata = np.frombuffer(rawdata, dtype=dtype)
-        bramdata = bramdata.astype(np.float)
+        bramdata = read_data(roach, bram, awidth, dwidth, dtype)
         bramdata_list.append(bramdata)
 
     # interleave data list into a single array (this works, believe me)
     interleaved_data = np.vstack(bramdata_list).reshape((-1,), order='F')
 
     return interleaved_data
+
+def read_deinterleave_data(roach, bram, dfactor, awidth, dwidth, dtype):
+    """
+    Reads data from a bram and deinterleave the data into a dfactor number of 
+    separate data arrays. Assumes that lendata % dfactor = 0.
+    Useful when independent spectral data is saved in the same bram in an 
+    interleaved manner.
+    :param roach: CalanFpga object to communicate with ROACH.
+    :param bram: bram name.
+    :param dfactor: deinterleave factor. The number of arrays in which to
+        deinterleave the data.
+    :param awidth: width of bram address in bits.
+    :param dwidth: width of bram data in bits.
+    :param dtype: data type of data in bram. See read_snapshots().
+    :return: list with the deinterleaved data arrays.
+    """
+    # get data
+    bramdata = read_data(roach, bram, awidth, dwidth, dtype)
+
+    lendata  = len(bramdata)
+    newshape = (lendata/dfactor, dfactor)
+    # deinterleave data into dfactor arrays (this works, believe me)
+    bramdata_list = list(np.transpose(np.reshape(bramdata, newshape)
+
+    return bramdata_list
 
 def scale_and_dBFS_specdata(data, acclen, dBFS):
     """
