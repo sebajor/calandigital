@@ -38,7 +38,7 @@ import calandigital as cd
 roach = cd.initialize.roach(<ROACH_IP>, boffile=<BOFFILE>, rver=<ROACH_VERSION>)
 ```
 
-Additionally, calandigital provides a Instrument class that uses the [vxi11 package](https://github.com/python-ivi/python-vxi11) and add the functionality of simulating an instrument. To create an instrument object, simply use `instrument = cd.Instrument(<IP>)`, or `cd.Intrument()` for a simulated instrument.
+Additionally, calandigital provides a Instrument class that uses the [vxi11 package](https://github.com/python-ivi/python-vxi11) and add the functionality of simulating an instrument. To create an instrument object, simply use `instrument = cd.Instrument(<IP>)`, or `cd.Instrument()` for a simulated instrument, and then use it the same as a vxi11 Instrument.
 
 ## Scripts
 After installation, scripts can be run from terminal. For more information use `<script_name> -h`. These are the currently implemented scripts:
