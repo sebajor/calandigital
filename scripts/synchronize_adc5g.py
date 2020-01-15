@@ -1,8 +1,8 @@
-import argparse, vxi11
+import argparse, vxi11, time
 import calandigital as cd
 import numpy as np
 import matplotlib.pyplot as plt
-import scipy
+import scipy.stats
 
 parser = argparse.ArgumentParser(
     description="Synchronize 2 ADC5G ADCs in ROACH2.")
@@ -12,7 +12,7 @@ parser.add_argument("-b", "--bof", dest="boffile",
     help="Boffile to load into the FPGA.")
 parser.add_argument("-g", "--genip", dest="generator_ip",
     help="Generator IP. Skip if generator is used manually.")
-parser.add_argument("-gf", "--genfreq", dest="genfreq", type=float,
+parser.add_argument("-gp", "--genpow", dest="genpow", type=float,
     help="Power (dBm) to set at the generator to perform the calibration.")
 parser.add_argument("-b0", "--zdok0brams", dest="zdok0brams", nargs="*",
     help="Bram names for ZDOK0 spectrum.")
@@ -35,7 +35,7 @@ parser.add_argument("-ar", "--accreg", dest="acc_reg", default="acc_len",
 parser.add_argument("-al", "--acclen", dest="acclen", type=int, default=2**16,
     help="Accumulation length. Set at initialization.")
 parser.add_argument("-dr", "--delayregs", dest="delay_regs", nargs="*", 
-    default=["delay_adc0", "delay_adc1"],
+    default=["adc0_delay", "adc1_delay"],
     help="Delay regiters. Define the amount of delay for each ADC.")
 parser.add_argument("-stc", "--startchnl", dest="startchnl", type=int, default=1,
     help="Start channel for the synchronization sweep.")
@@ -52,18 +52,18 @@ def main():
 
     # useful parameters
     nbrams         = len(args.zdok0brams)
-    dtype_pow      = '>u' + args.dwidth/8
-    dtype_crosspow = '>i' + args.dwidth/8
+    dtype_pow      = '>u' + str(args.dwidth/8)
+    dtype_crosspow = '>i' + str(args.dwidth/8)
     nchannels      = 2**args.awidth * nbrams 
     test_channels  = range(args.startchnl, args.stopchnl, args.chnlstep)
     freqs          = np.linspace(0, args.bandwidth, nchannels, endpoint=False)
     test_freqs     = freqs[test_channels]
-    dBFS           = 6.02*args.nbits + 1.76 + 10*np.log10(nchannels)
+    dBFS           = 6.02*8 + 1.76 + 10*np.log10(nchannels)
     # estimated time for two accumulated spectra to pass
-    pause_time     = 2 * 1/(args.bandwidth*1e6) * 2**args.awidth * args.acclen)
+    pause_time     = 2 * 1/(args.bandwidth*1e6) * 2**args.awidth * nbrams * args.acclen
     
     # create figure
-    fig, lines = create_figure(args.bandwidth, dBFS, syncfreqs)
+    fig, lines = create_figure(args.bandwidth, dBFS, test_freqs)
 
     # turn on generator
     generator = cd.Instrument(args.generator_ip)
@@ -89,16 +89,16 @@ def main():
             time.sleep(pause_time)
 
             # get power data
-            aa = cd.read_interleave_data(roach, args.zdok0brams
+            aa = cd.read_interleave_data(roach, args.zdok0brams,
                 args.awidth, args.dwidth, dtype_pow)
-            bb = cd.read_interleave_data(roach, args.zdok1brams
+            bb = cd.read_interleave_data(roach, args.zdok1brams,
                 args.awidth, args.dwidth, dtype_pow)
 
             # get crosspow data
-            ab_re = cd.read_interleave_data(roach, args.crossbramreal,
-                args,awidth, args.dwidth, dtype_crosspow)
-            ab_im = cd.read_interleave_data(roach, args.crossbramimag,
-                args,awidth, args.dwidth, dtype_crosspow)
+            ab_re = cd.read_interleave_data(roach, args.crossbramsreal,
+                args.awidth, args.dwidth, dtype_crosspow)
+            ab_im = cd.read_interleave_data(roach, args.crossbramsimag,
+                args.awidth, args.dwidth, dtype_crosspow)
 
             # combine real and imaginary part of crosspow data
             ab = ab_re + 1j*ab_im
@@ -108,9 +108,9 @@ def main():
             ratios.append(np.conj(ab[chnl]) / aa[chnl]) # (ab*)* / aa* = a*b / aa* = b/a
 
             # plot spectra
-            spec_zdok0 = cd.scale_dbfs_spec_data(aa, args.acclen, dBFS)
+            spec_zdok0 = cd.scale_and_dBFS_specdata(aa, args.acclen, dBFS)
             lines[0].set_data(freqs, spec_zdok0)
-            spec_zdok1 = cd.scale_dbfs_spec_data(bb, args.acclen, dBFS)
+            spec_zdok1 = cd.scale_and_dBFS_specdata(bb, args.acclen, dBFS)
             lines[1].set_data(freqs, spec_zdok1)
 
             # plot mag ratio and angle diff
@@ -119,9 +119,10 @@ def main():
 
             # update plots
             fig.canvas.draw()
+            fig.canvas.flush_events()
     
         # get delays between adcs
-        delay = compute_adc_delay(test_freqs, ratios) 
+        delay = compute_adc_delay(test_freqs, ratios, args.bandwidth) 
 
         # check adcs sync status, apply delay if necesary
         if delay == 0:
@@ -135,11 +136,11 @@ def main():
     # turn off generator
     generator.write("outp off")
 
-def create_figure(bandwidth, dBFS, syncfreqs)
+def create_figure(bandwidth, dBFS, syncfreqs):
     """
     Create figure with the proper axes for the synchronization procedure.
     """
-    fig, axes = plt.subplot(2, 2, squeeze=False)
+    fig, axes = plt.subplots(2, 2, squeeze=False)
     fig.set_tight_layout(True)
     fig.show()
     fig.canvas.draw()
@@ -151,15 +152,15 @@ def create_figure(bandwidth, dBFS, syncfreqs)
     axes[0,0].set_ylabel('Power [dBFS]')   ; axes[0,1].set_ylabel('Power [dBFS]')
     axes[0,0].set_title('ZDOK0')           ; axes[0,1].set_title('ZDOK1')
     axes[0,0].grid()                       ; axes[0,1].grid()
-    linezdok0 = axes[0,0].plot([], [])     ; linezdok1 = axes[0,1].plot([], [])
+    linezdok0, = axes[0,0].plot([], [])    ; linezdok1, = axes[0,1].plot([], [])
 
     # magnitude ratio axes
-    axes[1,1].set_xlim(syncfreqs[0], syncfreqs[-1])       
-    axes[1,0].set_ylim(0, 10)         
+    axes[1,0].set_xlim(syncfreqs[0], syncfreqs[-1])       
+    axes[1,0].set_ylim(0, 2)         
     axes[1,0].set_xlabel('Frequency [MHz]')
     axes[1,0].set_ylabel('Mag Ratio [linear]')   
     axes[1,0].grid()                       
-    linemag = axes[1,0].plot([], [])     
+    linemag, = axes[1,0].plot([], [])     
 
     # magnitude ratio axes
     axes[1,1].set_xlim(syncfreqs[0], syncfreqs[-1])       
@@ -167,11 +168,11 @@ def create_figure(bandwidth, dBFS, syncfreqs)
     axes[1,1].set_xlabel('Frequency [MHz]')
     axes[1,1].set_ylabel('Angle diff [degrees]')   
     axes[1,1].grid()                       
-    lineang = axes[1,1].plot([], [])     
+    lineang, = axes[1,1].plot([], [])     
 
     return fig, [linezdok0, linezdok1, linemag, lineang]
 
-def compute_adc_delay(freqs, ratios):
+def compute_adc_delay(freqs, ratios, bandwidth):
     """
     Compute the adc delay between two unsynchronized adcs. It is done by 
     computing the slope of the phase difference with respect the frequency, 
@@ -180,12 +181,13 @@ def compute_adc_delay(freqs, ratios):
     :param freqs: frequency array in which the sideband ratios where computed.
     :param ratios: complex ratios array of the adcs. The complex ratios is the 
         complex division of an spectral channel from adc0 with adc1.
+    :param bandwidth: spectrometer bandwidth.
     :return: adc delay in number of samples.
     """
     phase_diffs = np.unwrap(np.angle(ratios))
     linregress_results = scipy.stats.linregress(freqs, phase_diffs)
     angle_slope = linregress_results.slope
-    delay = int(round(angle_slope * 2*self.settings.bw / (2*np.pi))) # delay = dphi/df * Fs / 2pi
+    delay = int(round(angle_slope * 2*bandwidth / (2*np.pi))) # delay = dphi/df * Fs / 2pi
     print "Computed delay: " + str(delay)
     return delay
    
