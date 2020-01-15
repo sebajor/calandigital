@@ -28,7 +28,7 @@ After installation the helper functions can be called from a python script if th
 - [x] `read_snapshots`: reads data of a list of snapshots blocks
 - [x] `read_data`: reads data form a bram given the bram width and depth.
 - [x] `read_interleave_data`: reads data of a list of brams and then interleaves the data (used for wideband spectrometers).
-- [ ] `read_deinterleave_data`: reads data of a bram and then deinterleaves the data (used for small spectrometers)
+- [x] `read_deinterleave_data`: reads data of a bram and then deinterleaves the data (used for small spectrometers)
 - [ ] `write_deinterleave_data`: deinterleaves an array of data and writes it into a list of brams.
 - [x] `scale_and_dBFS_specdata`: scales data by the accumulation length and converts it to dBFS (dB Full Scale)
 
