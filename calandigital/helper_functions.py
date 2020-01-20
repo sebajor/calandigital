@@ -143,7 +143,7 @@ def read_deinterleave_data(roach, bram, dfactor, awidth, dwidth, dtype):
     lendata  = len(bramdata)
     newshape = (lendata/dfactor, dfactor)
     # deinterleave data into dfactor arrays (this works, believe me)
-    bramdata_list = list(np.transpose(np.reshape(bramdata, newshape)
+    bramdata_list = list(np.transpose(np.reshape(bramdata, newshape)))
 
     return bramdata_list
 
