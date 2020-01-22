@@ -105,7 +105,7 @@ def read_interleave_data(roach, brams, awidth, dwidth, dtype):
     Reads data from a list of brams and interleave the data in order to return 
     in correctly ordered (as per typical spectrometer models in ROACH).
     :param roach: CalanFpga object to communicate with ROACH.
-    :param brams: list of bram list to read and interleave.
+    :param brams: list of brams to read and interleave.
     :param awidth: width of bram address in bits.
     :param dwidth: width of bram data in bits.
     :param dtype: data type of data in brams. See read_snapshots().
@@ -129,7 +129,7 @@ def read_deinterleave_data(roach, bram, dfactor, awidth, dwidth, dtype):
     Useful when independent spectral data is saved in the same bram in an 
     interleaved manner.
     :param roach: CalanFpga object to communicate with ROACH.
-    :param bram: bram name.
+    :param bram: bram name to read.
     :param dfactor: deinterleave factor. The number of arrays in which to
         deinterleave the data.
     :param awidth: width of bram address in bits.
@@ -146,6 +146,24 @@ def read_deinterleave_data(roach, bram, dfactor, awidth, dwidth, dtype):
     bramdata_list = list(np.transpose(np.reshape(bramdata, newshape)
 
     return bramdata_list
+
+def write_interleaved_data(roach, brams, dfactor, data):
+    """
+    Deinterleaves an array of interleaved data, and writes each deinterleaved
+    array into a bram of a list of brams.
+    :param roach: CalanFpga object to communicate with ROACH.
+    :param brams: list of brams to write into.
+    :param dfactor: deinterleave factor. The number of arrays in which to
+        deinterleave the data.
+    :param data: array of data to write. (Every Numpy type is accepted but the
+        data converted into bytes before is written).
+    """
+    # deinterleave data into dfactor arrays (this works, believe me)
+    bramdata_list = list(np.transpose(np.reshape(data, newshape)
+    
+    # write data into brams
+    for bram, bramdata in zip(brams, bramdata_list):
+        roach.write(bram, data.tobytes())
 
 def scale_and_dBFS_specdata(data, acclen, dBFS):
     """
@@ -166,3 +184,60 @@ def scale_and_dBFS_specdata(data, acclen, dBFS):
     data = 10*np.log10(data+1) - dBFS
 
     return data
+
+def float2fixed(data, nbits, binpt, signed=True, warn=False):
+    """
+    Convert an array of floating points to fixed points, with width number of
+    bits nbits, and binary point binpt. Optional warinings can be printed
+    to check for overflow in conversion.
+    :param data: data to convert.
+    :param nbits: number of bits of the fixed point format.
+    :param binpt: binary point of the fixed point format.
+    :param signed: if true use signed representation, else use unsigned.
+    :param warn: if true print overflow warinings.
+    :return: data in fixed point format.
+    """
+    if warn:
+        check_overflow(nbits, bin_pt, data)
+
+    nbytes = np.ceil(nbits/8)
+    dtype = '>i'+str(nbytes) if signed else '>u'+str(nbytes)
+
+    fixedpoint_data = (2**binpt * data).astype(dtype)
+    return fixedpoint_data
+
+def check_overflow(data, nbits, binpt, signed):
+    """
+    Check if the values of an array exceed the limit values given by a 
+    fixed point representation, and print a warining if that is the case.
+    :param data: data to check.
+    :param nbits: number of bits of the fixed point format.
+    :param binpt: binary point of the fixed point format.
+    :param signed: if true use signed representation, else use unsigned.
+    """
+    # limit values of fixed point
+    max_val_unsigned = ( 2.0** nbits   -1) / (2**binpt)
+    min_val_unsigned =   0
+    max_val_signed   = ( 2.0**(nbits-1)-1) / (2**binpt)
+    min_val_signed   = (-2.0**(nbits-1))   / (2**binpt)
+
+    # check overflow
+    if signed:
+        if np.max(data) > max_val_signed:
+            print "WARNING! Maximum value exceeded in overflow check."
+            print "Max allowed value: " + str(max_val_signed)
+            print "Max value in data: " + str(np.max(data))
+        if np.min(data) < min_val_signed:
+            print "WARNING! Minimum value exceeded in overflow check."
+            print "Min allowed value: " + str(min_val_signed)
+            print "Min value in data: " + str(np.min(data))
+
+    else: # unsigned
+        if np.max(data) > max_val_unsigned:
+            print "WARNING! Maximum value exceeded in overflow check."
+            print "Max allowed value: " + str(max_val_unsigned)
+            print "Max value in data: " + str(np.max(data))
+        if np.min(data) < min_val_unsigned:
+            print "WARNING! Minimum value exceeded in overflow check."
+            print "Min allowed value: " + str(min_val_unsigned)
+            print "Min value in data: " + str(np.min(data))
