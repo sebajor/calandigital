@@ -11,6 +11,8 @@ parser.add_argument("-i", "--ip", dest="ip", required=True,
     help="ROACH IP address.")
 parser.add_argument("-b", "--bof", dest="boffile",
     help="Boffile to load into the FPGA.")
+parser.add_argument("-u", "--upload", dest="upload", action="store_true",
+    help="If used, upload .bof from PC memory (ROACH2 only).")
 parser.add_argument("-g", "--genip", dest="generator_ip",
     help="Generator IP. Skip if generator is used manually.")
 parser.add_argument("-gf", "--genfreq", dest="genfreq", type=float,
@@ -49,7 +51,7 @@ def main():
     args = parser.parse_args()
     
     # initialize roach
-    roach = cd.initialize_roach(args.ip, boffile=args.boffile, rver=2)
+    roach = cd.initialize_roach(args.ip, boffile=args.boffile, upload=args.upload)
 
     # useful parameters
     snapnames = args.zdok0snaps + args.zdok1snaps

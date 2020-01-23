@@ -7,13 +7,13 @@ parser.add_argument("-i", "--ip", dest="ip", required=True,
     help="ROACH IP address.")
 parser.add_argument("-b", "--bof", dest="boffile",
     help="Boffile to load into the FPGA.")
-parser.add_argument("-r", "--rver", dest="rver", type=int, default=2,
-    choices={1,2}, help="ROACH version to use. 1 and 2 supported.")
+parser.add_argument("-u", "--upload", dest="upload", action="store_true",
+    help="If used, upload .bof from PC memory (ROACH2 only).")
 
 def main():
     args = parser.parse_args()
 
-    roach = cd.initialize_roach(args.ip, boffile=args.boffile, rver=args.rver)
+    roach = cd.initialize_roach(args.ip, boffile=args.boffile, upload=args.upload)
 
 if __name__ == '__main__':
     main()

@@ -6,15 +6,16 @@ import corr
 import numpy as np
 import vxi11
 
-def initialize_roach(ip, port=7147, boffile=None, rver=2):
+def initialize_roach(ip, port=7147, boffile=None, upload=True):
     """
     Initializes ROACH, that is, start ROACH communication, program boffile
     into the FPGA, and creates the FpgaClient object to communicate with.
     :param ip: ROACH IP address.
-    :param port: ROCH TCP/IP port for communication.
+    :param port: ROACH TCP/IP port for communication.
     :param boffile: .bof file to program the FPGA. If None porgramming 
         is skipped.
-    :param rver: version of the ROACH, 1 and 2 supported.
+    :param upload: If true upload .bof file from PC into ROACH volatile 
+        memory. Supported for ROACH2 only.
     :return: FpgaClient object to communicate with ROACH's FPGA.
     """
     print("Initializing ROACH communication...")
@@ -31,17 +32,14 @@ def initialize_roach(ip, port=7147, boffile=None, rver=2):
 
     if boffile is not None:
         print("Programming boffile " + boffile + " into ROACH...")
-        if rver is 1:
-            print("\tUsing ROACH1, programming from ROACH internal memory...")
+        if not upload:
+            print("\tProgramming ROACH from internal memory...")
             roach.progdev(boffile)
             time.sleep(1)
-        elif rver is 2:
-            print("\tUsing ROACH2, programming from PC memory...")
+        else: # upload
+            print("\tProgramming ROACH from PC memory...")
             roach.upload_program_bof(boffile, 60000)
             time.sleep(1)
-        else:
-            print("ROACH version not supported.")
-            exit()
         print("done")
     else:
         print("Skipping programming boffile.")
