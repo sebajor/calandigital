@@ -7,8 +7,8 @@ more user friendly.
 
 calandigital features can be divided in two: 
 
-1. helper functions to ease the development of new scripts
-2. out-of-the-box scripts of commonly used operations in ROACH
+1. helper functions to ease the development of new scripts.
+2. out-of-the-box scripts of commonly used operations in ROACH.
 
 ## Installation
 calandigital works in python2.7 only, so make sure you are using this version in your system or your virtual environment.
@@ -24,14 +24,14 @@ Installation instruction only for Linux-based system provided:
 ## Helper Functions
 After installation the helper functions can be called from a python script if the calandigital package is imported. These are the currently implemented functions in the calandigital package:
 
-- [x] `initialize_roach`: starts roach communication and loads boffile
-- [x] `read_snapshots`: reads data of a list of snapshots blocks
+- [x] `initialize_roach`: starts roach communication and loads boffile.
+- [x] `read_snapshots`: reads data of a list of snapshots blocks.
 - [x] `read_data`: reads data form a bram given the bram width and depth.
 - [x] `read_interleave_data`: reads data of a list of brams and then interleaves the data (used for wideband spectrometers).
-- [x] `read_deinterleave_data`: reads data of a bram and then deinterleaves the data (used for small spectrometers)
+- [x] `read_deinterleave_data`: reads data of a bram and then deinterleaves the data (used for small spectrometers).
 - [x] `write_interleaved_data`: deinterleaves an array of data and writes it into a list of brams.
 - [x] `scale_and_dBFS_specdata`: scales data by the accumulation length and converts it to dBFS (dB Full Scale).
-- [x] `float2fixed`: converts data from floating point to fixed point, with optional overflow warinigs.
+- [x] `float2fixed`: converts data from floating point to fixed point, with optional overflow warnings.
 
 For example, if we want to make a script to initialize the ROACH we can write:
 ```python
@@ -44,11 +44,12 @@ Additionally, calandigital provides a Instrument class that uses the [vxi11 pack
 ## Scripts
 After installation, scripts can be run from terminal. For more information use `<script_name> -h`. These are the currently implemented scripts:
 
-- [x] `initialize_roach.py`: starts roach communication and loads boffile
-- [x] `plot_snapshots.py`: plot snapshot data from a model snapshot blocks
-- [x] `plot_spectra.py`: plot spectra data from a model spectrometer model
-- [x] `calibrate_adc5g.py`: calibrate ADC5G ADCs from a ROACH2
-- [x] `synchronize_adc5g.py`: synchronize ADC5G ADCs from a ROACH2
+- [x] `initialize_roach.py`: starts roach communication and loads boffile.
+- [x] `plot_snapshots.py`: plot snapshot data from a model snapshot blocks.
+- [x] `plot_spectra.py`: plot spectra data from a model spectrometer model.
+- [x] `calibrate_adc5g.py`: calibrate ADC5G ADCs from a ROACH2.
+- [x] `synchronize_adc5g.py`: synchronize ADC5G ADCs from a ROACH2.
+- [x] `set_valon5007.py`: set power and frequency of a [Valon 5007 synthesizer](http://valontechnology.com/5007/5007.htm) (usually used for ROACH clock).
 
 ## External Links
 * [simulink_models](https://github.com/FrancoCalan/simulink_models): Sister repository with simulink models, compiled .bof files, and script files for various examples and projects.

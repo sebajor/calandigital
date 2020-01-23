@@ -157,7 +157,7 @@ def write_interleaved_data(roach, brams, dfactor, data):
         data converted into bytes before is written).
     """
     # deinterleave data into dfactor arrays (this works, believe me)
-    bramdata_list = list(np.transpose(np.reshape(data, newshape)
+    bramdata_list = list(np.transpose(np.reshape(data, newshape)))
     
     # write data into brams
     for bram, bramdata in zip(brams, bramdata_list):
@@ -198,7 +198,7 @@ def float2fixed(data, nbits, binpt, signed=True, warn=False):
     if warn:
         check_overflow(nbits, bin_pt, data)
 
-    nbytes = np.ceil(nbits/8)
+    nbytes = int(np.ceil(nbits/8))
     dtype = '>i'+str(nbytes) if signed else '>u'+str(nbytes)
 
     fixedpoint_data = (2**binpt * data).astype(dtype)
