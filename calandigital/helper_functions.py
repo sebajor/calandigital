@@ -6,7 +6,7 @@ import corr
 import numpy as np
 import vxi11
 
-def initialize_roach(ip, port=7147, boffile=None, upload=True):
+def initialize_roach(ip, port=7147, boffile=None, upload=False):
     """
     Initializes ROACH, that is, start ROACH communication, program boffile
     into the FPGA, and creates the FpgaClient object to communicate with.
