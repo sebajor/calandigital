@@ -36,11 +36,8 @@ After installation the helper functions can be called from a python script if th
 For example, if we want to make a script to initialize the ROACH we can write:
 ```python
 import calandigital as cd
-roach = cd.initialize.roach(<ROACH_IP>, boffile=<BOFFILE>, rver=<ROACH_VERSION>)
+roach = cd.initialize.roach(<ROACH_IP>, boffile=<BOFFILE>, upload=True)
 ```
-
-Additionally, calandigital provides a Instrument class that uses the [vxi11 package](https://github.com/python-ivi/python-vxi11) and add the functionality of simulating an instrument. To create an instrument object, simply use `instrument = cd.Instrument(<IP>)`, or `cd.Instrument()` for a simulated instrument, and then use it the same as a vxi11 Instrument.
-
 ## Scripts
 After installation, scripts can be run from terminal. For more information use `<script_name> -h`. These are the currently implemented scripts:
 
@@ -50,6 +47,12 @@ After installation, scripts can be run from terminal. For more information use `
 - [x] `calibrate_adc5g.py`: calibrate ADC5G ADCs from a ROACH2.
 - [x] `synchronize_adc5g.py`: synchronize ADC5G ADCs from a ROACH2.
 - [x] `set_valon5007.py`: set power and frequency of a [Valon 5007 synthesizer](http://valontechnology.com/5007/5007.htm) (usually used for ROACH clock).
+
+## Additional Subpackages
+Calandigital also provides some subpackages for aditional functionalities (check subpackages READMEs for more informatios):
+- [x] `adc5g_devel`: a strip down version of NRAO's [adc5g_devel](https://github.com/nrao/adc5g_devel). Used in the `calibrate_adc5g.py` script.
+- [x] `instrument`: used to create real or simulated instruments. Uses [vxi11 package](https://github.com/python-ivi/python-vxi11).
+- [x] `qdr`: used to calibrate ROACH2's QDR memories. Extracted from [CASPER mlib_devel repo](https://github.com/casper-astro/mlib_devel/tree/roach2)
 
 ## External Links
 * [simulink_models](https://github.com/FrancoCalan/simulink_models): Sister repository with simulink models, compiled .bof files, and script files for various examples and projects.
