@@ -1,12 +1,12 @@
 """
 Main calandigital script with helper functions.
 """
-import sys, time, imp
+import sys, time
 import corr
 import numpy as np
 import vxi11
 
-def initialize_roach(ip, port=7147, boffile=None, upload=False):
+def initialize_roach(ip, port=7147, boffile=None, upload=False, timeout=10.0):
     """
     Initializes ROACH, that is, start ROACH communication, program boffile
     into the FPGA, and creates the FpgaClient object to communicate with.
@@ -16,10 +16,13 @@ def initialize_roach(ip, port=7147, boffile=None, upload=False):
         is skipped.
     :param upload: If true upload .bof file from PC into ROACH volatile 
         memory. Supported for ROACH2 only.
+    :param timeout: time to wait before thorwing a timeout exception while
+        communicating with roach. Use longer times when extracting large
+        amounts of data (e.g. from DRAM).
     :return: FpgaClient object to communicate with ROACH's FPGA.
     """
     print("Initializing ROACH communication...")
-    roach = corr.katcp_wrapper.FpgaClient(ip, port)
+    roach = corr.katcp_wrapper.FpgaClient(ip, port, timeout=timeout)
     time.sleep(0.5)
     if not roach.is_connected():
         print("Unable to connect to ROACH :/")
@@ -162,6 +165,22 @@ def write_interleaved_data(roach, brams, dfactor, data):
     # write data into brams
     for bram, bramdata in zip(brams, bramdata_list):
         roach.write(bram, data.tobytes())
+
+def read_dram_data(roach, awidth, dwidth, dtype):
+    """
+    Reads data from a dram in roach.
+    :param roach: CalanFpga object to communicate with ROACH.
+    :param awidth: width of dram address in bits.
+    :param dwidth: width of dram data in bits.
+    :param dtype: data type of data in dram. See read_snapshots().
+    :return: array with the read data.
+    """
+    depth = 2**awidth
+    rawdata  = roach.read_dram(depth*dwidth/8, 0)
+    dramdata = np.frombuffer(rawdata, dtype=dtype)
+    dramdata = dramdata.astype(np.float)
+
+    return dramdata
 
 def scale_and_dBFS_specdata(data, acclen, dBFS):
     """

@@ -198,16 +198,18 @@ def create_snap_figure(snapnames, nsamples):
 
     lines_uncal = []; lines_cal = []
     for snapname, ax in zip(snapnames, axes.flatten()):
+        line_uncal, = ax.plot([], [], label='uncalibrated')
+        line_cal,   = ax.plot([], [], label='calibrated')
+        lines_uncal.append(line_uncal)
+        lines_cal.append(line_cal)
+        
         ax.set_xlim(0, nsamples)
         ax.set_ylim(np.iinfo(dtype).min-10, np.iinfo(dtype).max+10)
         ax.set_xlabel('Samples')
         ax.set_ylabel('Amplitude [a.u.]')
         ax.set_title(snapname)
         ax.grid()
-
-        lines = ax.plot([], [], [], [])
-        lines_uncal.append(lines[0])
-        lines_cal.append(  lines[1])
+        ax.legend()
 
     return fig, lines_uncal, lines_cal
 
@@ -224,16 +226,18 @@ def create_spec_figure(specnames, bandwidth, dBFS):
 
     lines_uncal = []; lines_cal = []
     for specname, ax in zip(specnames, axes.flatten()):
+        line_uncal, = ax.plot([], [], label='uncalibrated')
+        line_cal,   = ax.plot([], [], label='calibrated')
+        lines_uncal.append(line_uncal)
+        lines_cal.append(line_cal)
+
         ax.set_xlim(0, bandwidth)
         ax.set_ylim(-dBFS-2, 0)
         ax.set_xlabel('Frequency [MHz]')
         ax.set_ylabel('Power [dBFS]')
         ax.set_title(specname)
         ax.grid()
-
-        lines = ax.plot([], [], [], [])
-        lines_uncal.append(lines[0])
-        lines_cal.append(  lines[1])
+        ax.legend()
 
     return fig, lines_uncal, lines_cal
 
