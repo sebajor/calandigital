@@ -40,7 +40,7 @@ def main():
     # useful parameters
     nbrams         = len(args.bramnames) / args.nspecs
     specbrams_list = [args.bramnames[i*nbrams:(i+1)*nbrams] for i in range(args.nspecs)]
-    dtype          = '>u' + args.dwidth/8
+    dtype          = '>u' + str(args.dwidth/8)
     nchannels      = 2**args.awidth * nbrams 
     freqs          = np.linspace(0, args.bandwidth, nchannels, endpoint=False)
     dBFS           = 6.02*args.nbits + 1.76 + 10*np.log10(nchannels)
