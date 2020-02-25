@@ -1,10 +1,9 @@
 """
 Main calandigital script with helper functions.
 """
-import sys, time
+import time
 import corr
 import numpy as np
-import vxi11
 
 def initialize_roach(ip, port=7147, boffile=None, upload=False, timeout=10.0):
     """
@@ -195,7 +194,7 @@ def scale_and_dBFS_specdata(data, acclen, dBFS):
     :return: scaled data in dBFS.
     """
     # scale data 
-    data = data / acclen
+    data = data / float(acclen)
 
     # convert data to dBFS
     data = 10*np.log10(data+1) - dBFS
