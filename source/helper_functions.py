@@ -147,23 +147,24 @@ def read_deinterleave_data(roach, bram, dfactor, awidth, dwidth, dtype):
 
     return bramdata_list
 
-def write_interleaved_data(roach, brams, dfactor, data):
+def write_interleaved_data(roach, brams, data):
     """
     Deinterleaves an array of interleaved data, and writes each deinterleaved
     array into a bram of a list of brams.
     :param roach: CalanFpga object to communicate with ROACH.
     :param brams: list of brams to write into.
-    :param dfactor: deinterleave factor. The number of arrays in which to
-        deinterleave the data.
     :param data: array of data to write. (Every Numpy type is accepted but the
         data converted into bytes before is written).
     """
-    # deinterleave data into dfactor arrays (this works, believe me)
-    bramdata_list = list(np.transpose(np.reshape(data, newshape)))
+    ndata  = len(data)
+    nbrams = len(brams)
+
+    # deinterleave data into arrays (this works, believe me)
+    bramdata_list = np.transpose(np.reshape(data, (ndata/nbrams, nbrams)))
     
     # write data into brams
     for bram, bramdata in zip(brams, bramdata_list):
-        roach.write(bram, data.tobytes())
+        roach.write(bram, bramdata.tobytes(), 0)
 
 def read_dram_data(roach, awidth, dwidth, dtype):
     """
@@ -214,7 +215,7 @@ def float2fixed(data, nbits, binpt, signed=True, warn=False):
     :return: data in fixed point format.
     """
     if warn:
-        check_overflow(nbits, bin_pt, data)
+        check_overflow(data, nbits, binpt, signed)
 
     nbytes = int(np.ceil(nbits/8))
     dtype = '>i'+str(nbytes) if signed else '>u'+str(nbytes)

@@ -16,6 +16,8 @@ parser.add_argument("-g", "--genip", dest="generator_ip",
     help="Generator IP. Skip if generator is used manually.")
 parser.add_argument("-gp", "--genpow", dest="genpow", type=float,
     help="Power (dBm) to set at the generator to perform the calibration.")
+parser.add_argument("-lf", "--lofreq", dest="lofreq", type=float, default=0,
+    help="LO frequency in MHz if a downconversion stage is used (use 0 if not).")
 parser.add_argument("-b0", "--zdok0brams", dest="zdok0brams", nargs="*",
     help="Bram names for ZDOK0 spectrum.")
 parser.add_argument("-b1", "--zdok1brams", dest="zdok1brams", nargs="*",
@@ -58,8 +60,9 @@ def main():
     dtype_crosspow = '>i' + str(args.dwidth/8)
     nchannels      = 2**args.awidth * nbrams 
     test_channels  = range(args.startchnl, args.stopchnl, args.chnlstep)
-    freqs          = np.linspace(0, args.bandwidth, nchannels, endpoint=False)
-    test_freqs     = freqs[test_channels]
+    if_freqs       = np.linspace(0, args.bandwidth, nchannels, endpoint=False)
+    rf_freqs       = if_freqs + args.lofreq
+    test_freqs     = if_freqs[test_channels]
     dBFS           = 6.02*8 + 1.76 + 10*np.log10(nchannels)
     # estimated time for two accumulated spectra to pass
     pause_time     = 2 * 1/(args.bandwidth*1e6) * 2**args.awidth * nbrams * args.acclen
@@ -71,9 +74,12 @@ def main():
     generator = cd.Instrument(args.generator_ip)
     generator.write("power " +str(args.genpow) + " dbm")
     generator.ask("outp on;*opc?")
-
-    print("Setting and resetting registers...")
+    
+    # initial setting of registers
+    print("Setting accumulation register to " + str(args.acclen) + "...")
     roach.write_int(args.acc_reg, args.acclen)
+    print("done")
+    print("Resseting counter registers...")
     roach.write_int(args.count_reg, 1)
     roach.write_int(args.count_reg, 0)
     print("done")
@@ -86,7 +92,7 @@ def main():
 
         for i, chnl in enumerate(test_channels):
             # set generator frequency
-            freq = freqs[chnl]
+            freq = rf_freqs[chnl]
             generator.ask("freq " + str(freq) + " mhz; *opc?")
             time.sleep(pause_time)
 
@@ -111,9 +117,9 @@ def main():
 
             # plot spectra
             spec_zdok0 = cd.scale_and_dBFS_specdata(aa, args.acclen, dBFS)
-            lines[0].set_data(freqs, spec_zdok0)
+            lines[0].set_data(if_freqs, spec_zdok0)
             spec_zdok1 = cd.scale_and_dBFS_specdata(bb, args.acclen, dBFS)
-            lines[1].set_data(freqs, spec_zdok1)
+            lines[1].set_data(if_freqs, spec_zdok1)
 
             # plot mag ratio and angle diff
             lines[2].set_data(test_freqs[:i+1], np.abs(ratios))
@@ -128,7 +134,7 @@ def main():
 
         # check adcs sync status, apply delay if necesary
         if delay == 0:
-            print("ADCs successfully synthronized!")
+            print("ADCs successfully synchronized!")
             break
         elif delay > 0: # if delay is positive adc1 is ahead, hence delay adc1
             roach.write_int(args.delay_regs[1], delay)

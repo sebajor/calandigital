@@ -49,8 +49,10 @@ def main():
     fig, lines = create_figure(args.nspecs, args.bandwidth, dBFS)
     
     # initial setting of registers
-    print("Setting and resetting registers...")
+    print("Setting accumulation register to " + str(args.acclen) + "...")
     roach.write_int(args.acc_reg, args.acclen)
+    print("done")
+    print("Resseting counter registers...")
     roach.write_int(args.count_reg, 1)
     roach.write_int(args.count_reg, 0)
     print("done")
