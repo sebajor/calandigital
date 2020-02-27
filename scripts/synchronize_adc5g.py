@@ -137,9 +137,11 @@ def main():
             print("ADCs successfully synchronized!")
             break
         elif delay > 0: # if delay is positive adc1 is ahead, hence delay adc1
-            roach.write_int(args.delay_regs[1], delay)
+            current_delay = roach.read_int(args.delay_regs[1])
+            roach.write_int(args.delay_regs[1], current_delay + delay)
         else: # (delay < 0) if delay is negative adc0 is ahead, hence delay adc0
-            roach.write_int(args.delay_regs[0], -1*delay)
+            current_delay = roach.read_int(args.delay_regs[0])
+            roach.write_int(args.delay_regs[0], current_delay + -1*delay)
 
     # turn off generator
     generator.write("outp off")
