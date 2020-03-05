@@ -37,7 +37,7 @@ After installation the helper functions can be called from a python script if th
 For example, if we want to make a script to initialize the ROACH we can write:
 ```python
 import calandigital as cd
-roach = cd.initialize.roach(<ROACH_IP>, boffile=<BOFFILE>, upload=True)
+roach = cd.initialize_roach(<ROACH_IP>, boffile=<BOFFILE>, upload=True)
 ```
 ## Scripts
 After installation, scripts can be run from terminal. For more information use `<script_name> -h`. These are the currently implemented scripts:
