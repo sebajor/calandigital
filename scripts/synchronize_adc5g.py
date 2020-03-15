@@ -12,10 +12,13 @@ parser.add_argument("-b", "--bof", dest="boffile",
     help="Boffile to load into the FPGA.")
 parser.add_argument("-u", "--upload", dest="upload", action="store_true",
     help="If used, upload .bof from PC memory (ROACH2 only).")
-parser.add_argument("-g", "--genip", dest="generator_ip",
-    help="Generator IP. Skip if generator is used manually.")
+parser.add_argument("-g", "--genip", dest="generator_ip", required=True,
+    help="Generator IP.")
 parser.add_argument("-gp", "--genpow", dest="genpow", type=float,
     help="Power (dBm) to set at the generator to perform the calibration.")
+parser.add_argument("-gm", "--genmult", dest="genmult", type=float,
+    help="Frequency multiplier to set in generator settings if the setup \
+    includes an RF multiplier after the generator.")
 parser.add_argument("-lf", "--lofreq", dest="lofreq", type=float, default=0,
     help="LO frequency in MHz if a downconversion stage is used (use 0 if not).")
 parser.add_argument("-b0", "--zdok0brams", dest="zdok0brams", nargs="*",
@@ -70,9 +73,15 @@ def main():
     # create figure
     fig, lines = create_figure(args.bandwidth, dBFS, test_freqs)
 
-    # turn on generator
+    # initialize generator
     generator = cd.Instrument(args.generator_ip)
     generator.write("power " +str(args.genpow) + " dbm")
+
+    # set multiplier if given
+    hasattr(args, freqmult):
+        generator.write("freq mult " + str(args.freqmult))
+
+    # turn on generator
     generator.ask("outp on;*opc?")
     
     # initial setting of registers
@@ -142,6 +151,10 @@ def main():
         else: # (delay < 0) if delay is negative adc0 is ahead, hence delay adc0
             current_delay = roach.read_int(args.delay_regs[0])
             roach.write_int(args.delay_regs[0], current_delay + -1*delay)
+
+    # revert generator multiplier if used
+    hasattr(args, freqmult):
+        generator.write("freq mult 1")
 
     # turn off generator
     generator.write("outp off")
