@@ -1,4 +1,4 @@
-import argparse, os, datetime, tarfile, shutil
+import argparse, os, datetime, tarfile, shutil, pyvisa
 import calandigital as cd
 from calandigital.adc5g_devel.ADCCalibrate import ADCCalibrate
 import numpy as np
@@ -13,8 +13,10 @@ parser.add_argument("-b", "--bof", dest="boffile",
     help="Boffile to load into the FPGA.")
 parser.add_argument("-u", "--upload", dest="upload", action="store_true",
     help="If used, upload .bof from PC memory (ROACH2 only).")
-parser.add_argument("-g", "--genip", dest="generator_ip",
-    help="Generator IP. Skip if generator is used manually.")
+parser.add_argument("-g", "--genname", dest="generator_name",
+    help="Generator name (as a VISA string). \
+    See https://pyvisa.readthedocs.io/en/latest/introduction/names.html \
+    Skip if generator is used manually.")
 parser.add_argument("-gf", "--genfreq", dest="genfreq", type=float,
     help="Frequency (MHz) to set at the generator to perform the calibration.")
 parser.add_argument("-gp", "--genpow", dest="genpow", 
@@ -59,7 +61,8 @@ def main():
     caldir = args.caldir + ' ' + now.strftime('%Y-%m-%d %H:%M:%S')
 
     # turn on generator
-    generator = cd.Instrument(args.generator_ip)
+    rm = pyvisa.ResourceManager('@py')
+    generator = rm.open_resource(args.generator_name)
     generator.write("freq " +str(args.genfreq) + " mhz")
     generator.write("power " +str(args.genpow) + " dbm")
     generator.ask("outp on;*opc?")
@@ -175,8 +178,9 @@ def main():
         plot_spectra(speclines_cal, snapdata_list, args.bandwidth, dBFS)
         specfig.canvas.draw()
 
-    # turn off generator
+    # turn off generator and close resouce manager
     generator.write("outp off")
+    rm.close()
 
     print("Done with all calibrations.")
     if args.plot_snapshots or args.plot_spectra:

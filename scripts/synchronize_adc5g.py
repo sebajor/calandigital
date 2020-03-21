@@ -12,8 +12,9 @@ parser.add_argument("-b", "--bof", dest="boffile",
     help="Boffile to load into the FPGA.")
 parser.add_argument("-u", "--upload", dest="upload", action="store_true",
     help="If used, upload .bof from PC memory (ROACH2 only).")
-parser.add_argument("-g", "--genip", dest="generator_ip", required=True,
-    help="Generator IP.")
+parser.add_argument("-g", "--genname", dest="generator_name", required=True,
+    help="Generator name as a VISA string. \
+    See https://pyvisa.readthedocs.io/en/latest/introduction/names.html")
 parser.add_argument("-gp", "--genpow", dest="genpow", type=float,
     help="Power (dBm) to set at the generator to perform the calibration.")
 parser.add_argument("-gm", "--genmult", dest="genmult", type=float,
@@ -75,8 +76,7 @@ def main():
 
     # initialize generator
     rm = pyvisa.ResourceManager('@py')
-    #generator = cd.Instrument(args.generator_ip)
-    generator = rm.open_resource(args.generator_ip)
+    generator = rm.open_resource(args.generator_name)
     generator.write("power " +str(args.genpow) + " dbm")
 
     # set multiplier if given
@@ -159,8 +159,9 @@ def main():
     if hasattr(args, 'genmult'):
         generator.write("freq:mult 1")
 
-    # turn off generator
+    # turn off generator and close resource manager
     generator.write("outp off")
+    rm.close()
 
 def create_figure(bandwidth, dBFS, syncfreqs):
     """

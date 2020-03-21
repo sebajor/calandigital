@@ -5,7 +5,8 @@ numpy
 scipy
 matplotlib
 pyserial
-python-vxi11
+pyvisa
+pyvisa-py
 setuptools
 git+https://github.com/ska-sa/PySPEAD.git
 git+https://github.com/ska-sa/corr.git

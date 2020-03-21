@@ -52,7 +52,6 @@ After installation, scripts can be run from terminal. For more information use `
 ## Additional Subpackages
 Calandigital also provides some subpackages for aditional functionalities (check subpackages READMEs for more information):
 - [x] `adc5g_devel`: a strip down version of NRAO's [adc5g_devel](https://github.com/nrao/adc5g_devel). Used in the `calibrate_adc5g.py` script.
-- [x] `instrument`: used to create real or simulated instruments. Uses [vxi11 package](https://github.com/python-ivi/python-vxi11).
 - [x] `qdr`: used to calibrate ROACH2's QDR memories. Extracted from [CASPER mlib_devel repo](https://github.com/casper-astro/mlib_devel/tree/roach2)
 
 ## External Links
