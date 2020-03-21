@@ -4,12 +4,13 @@ Main calandigital script with helper functions.
 import time
 import corr
 import numpy as np
+from dummy_roach.dummy_roach import DummyRoach
 
 def initialize_roach(ip, port=7147, boffile=None, upload=False, timeout=10.0):
     """
     Initializes ROACH, that is, start ROACH communication, program boffile
     into the FPGA, and creates the FpgaClient object to communicate with.
-    :param ip: ROACH IP address.
+    :param ip: ROACH IP address. If None use dummy roach.
     :param port: ROACH TCP/IP port for communication.
     :param boffile: .bof file to program the FPGA. If None porgramming 
         is skipped.
@@ -21,7 +22,13 @@ def initialize_roach(ip, port=7147, boffile=None, upload=False, timeout=10.0):
     :return: FpgaClient object to communicate with ROACH's FPGA.
     """
     print("Initializing ROACH communication...")
-    roach = corr.katcp_wrapper.FpgaClient(ip, port, timeout=timeout)
+    if ip is None:
+        print("Using dummy ROACH...")
+        roach = DummyRoach(ip)
+
+    else:
+        roach = corr.katcp_wrapper.FpgaClient(ip, port, timeout=timeout)
+    
     time.sleep(0.5)
     if not roach.is_connected():
         print("Unable to connect to ROACH :/")

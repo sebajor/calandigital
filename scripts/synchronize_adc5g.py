@@ -1,4 +1,4 @@
-import argparse, vxi11, time
+import pyvisa, argparse, time
 import calandigital as cd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -74,12 +74,15 @@ def main():
     fig, lines = create_figure(args.bandwidth, dBFS, test_freqs)
 
     # initialize generator
-    generator = cd.Instrument(args.generator_ip)
+    rm = pyvisa.ResourceManager('@py')
+    #generator = cd.Instrument(args.generator_ip)
+    generator = rm.open_resource(args.generator_ip)
     generator.write("power " +str(args.genpow) + " dbm")
 
     # set multiplier if given
-    hasattr(args, freqmult):
-        generator.write("freq mult " + str(args.freqmult))
+    if hasattr(args, 'genmult'):
+        print("Using frequency multiplier of " + str(args.genmult))
+        generator.write("freq:mult " + str(args.genmult))
 
     # turn on generator
     generator.ask("outp on;*opc?")
@@ -153,8 +156,8 @@ def main():
             roach.write_int(args.delay_regs[0], current_delay + -1*delay)
 
     # revert generator multiplier if used
-    hasattr(args, freqmult):
-        generator.write("freq mult 1")
+    if hasattr(args, 'genmult'):
+        generator.write("freq:mult 1")
 
     # turn off generator
     generator.write("outp off")
