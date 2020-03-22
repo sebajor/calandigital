@@ -17,7 +17,7 @@ parser.add_argument("-g", "--genname", dest="generator_name", required=True,
     See https://pyvisa.readthedocs.io/en/latest/introduction/names.html")
 parser.add_argument("-gp", "--genpow", dest="genpow", type=float,
     help="Power (dBm) to set at the generator to perform the calibration.")
-parser.add_argument("-gm", "--genmult", dest="genmult", type=float,
+parser.add_argument("-gm", "--genmult", dest="genmult", type=float, default=None,
     help="Frequency multiplier to set in generator settings if the setup \
     includes an RF multiplier after the generator.")
 parser.add_argument("-lf", "--lofreq", dest="lofreq", type=float, default=0,
@@ -80,7 +80,7 @@ def main():
     generator.write("power " +str(args.genpow) + " dbm")
 
     # set multiplier if given
-    if hasattr(args, 'genmult'):
+    if args.genmult is not None:
         print("Using frequency multiplier of " + str(args.genmult))
         generator.write("freq:mult " + str(args.genmult))
 
@@ -156,7 +156,7 @@ def main():
             roach.write_int(args.delay_regs[0], current_delay + -1*delay)
 
     # revert generator multiplier if used
-    if hasattr(args, 'genmult'):
+    if args.genmult is not None:
         generator.write("freq:mult 1")
 
     # turn off generator and close resource manager
