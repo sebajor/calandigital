@@ -53,6 +53,7 @@ After installation, scripts can be run from terminal. For more information use `
 Calandigital also provides some subpackages for aditional functionalities (check subpackages READMEs for more information):
 - [x] `adc5g_devel`: a strip down version of NRAO's [adc5g_devel](https://github.com/nrao/adc5g_devel). Used in the `calibrate_adc5g.py` script.
 - [x] `qdr`: used to calibrate ROACH2's QDR memories. Extracted from [CASPER mlib_devel repo](https://github.com/casper-astro/mlib_devel/tree/roach2)
+- [x] `dummy_roach`: used to simulate a ROACH connection.
 
 ## External Links
 * [simulink_models](https://github.com/FrancoCalan/simulink_models): Sister repository with simulink models, compiled .bof files, and script files for various examples and projects.
