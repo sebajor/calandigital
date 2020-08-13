@@ -7,6 +7,7 @@ matplotlib
 pyserial
 pyvisa
 pyvisa-py
+pyvisa-sim
 setuptools
 git+https://github.com/ska-sa/PySPEAD.git
 git+https://github.com/ska-sa/corr.git

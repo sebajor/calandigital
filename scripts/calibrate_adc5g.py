@@ -7,14 +7,14 @@ import adc5g
 
 parser = argparse.ArgumentParser(
     description="Calibrate ADC5G ADCs from ROACH2 using snapshot information.")
-parser.add_argument("-i", "--ip", dest="ip", required=True,
+parser.add_argument("-i", "--ip", dest="ip", default=None,
     help="ROACH IP address.")
 parser.add_argument("-b", "--bof", dest="boffile",
     help="Boffile to load into the FPGA.")
 parser.add_argument("-u", "--upload", dest="upload", action="store_true",
     help="If used, upload .bof from PC memory (ROACH2 only).")
-parser.add_argument("-g", "--genname", dest="generator_name",
-    help="Generator name (as a VISA string). \
+parser.add_argument("-g", "--genname", dest="generator_name", default=None,
+    help="Generator name (as a VISA string). Simulated if not given.\
     See https://pyvisa.readthedocs.io/en/latest/introduction/names.html \
     Skip if generator is used manually.")
 parser.add_argument("-gf", "--genfreq", dest="genfreq", type=float,
@@ -61,11 +61,15 @@ def main():
     caldir = args.caldir + ' ' + now.strftime('%Y-%m-%d %H:%M:%S')
 
     # turn on generator
-    rm = pyvisa.ResourceManager('@py')
+    if args.generator_name is None:
+        rm = pyvisa.ResourceManager('@sim')
+        args.generator_name = "TCPIP::localhost::2222::INSTR"
+    else:
+        rm = pyvisa.ResourceManager('@py')
     generator = rm.open_resource(args.generator_name)
     generator.write("freq " +str(args.genfreq) + " mhz")
     generator.write("power " +str(args.genpow) + " dbm")
-    generator.ask("outp on;*opc?")
+    generator.query("outp on;*opc?")
 
     # get uncalibrated data if we want to plot
     if args.plot_snapshots or args.plot_spectra:

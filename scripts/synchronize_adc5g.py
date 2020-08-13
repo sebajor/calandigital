@@ -6,14 +6,14 @@ import scipy.stats
 
 parser = argparse.ArgumentParser(
     description="Synchronize 2 ADC5G ADCs in ROACH2.")
-parser.add_argument("-i", "--ip", dest="ip", required=True,
+parser.add_argument("-i", "--ip", dest="ip", default=None,
     help="ROACH IP address.")
 parser.add_argument("-b", "--bof", dest="boffile",
     help="Boffile to load into the FPGA.")
 parser.add_argument("-u", "--upload", dest="upload", action="store_true",
     help="If used, upload .bof from PC memory (ROACH2 only).")
-parser.add_argument("-g", "--genname", dest="generator_name", required=True,
-    help="Generator name as a VISA string. \
+parser.add_argument("-g", "--genname", dest="generator_name", default=None,
+    help="Generator name as a VISA string. Simulated if not given.\
     See https://pyvisa.readthedocs.io/en/latest/introduction/names.html")
 parser.add_argument("-gp", "--genpow", dest="genpow", type=float,
     help="Power (dBm) to set at the generator to perform the calibration.")
@@ -75,7 +75,11 @@ def main():
     fig, lines = create_figure(args.bandwidth, dBFS, test_freqs)
 
     # initialize generator
-    rm = pyvisa.ResourceManager('@py')
+    if args.generator_name is None:
+        rm = pyvisa.ResourceManager('@sim')
+        args.generator_name = "TCPIP::localhost::2222::INSTR"
+    else:
+        rm = pyvisa.ResourceManager('@py')
     generator = rm.open_resource(args.generator_name)
     generator.write("power " +str(args.genpow) + " dbm")
 
@@ -85,7 +89,7 @@ def main():
         generator.write("freq:mult " + str(args.genmult))
 
     # turn on generator
-    generator.ask("outp on;*opc?")
+    generator.query("outp on;*opc?")
     
     # initial setting of registers
     print("Setting accumulation register to " + str(args.acclen) + "...")
@@ -105,7 +109,7 @@ def main():
         for i, chnl in enumerate(test_channels):
             # set generator frequency
             freq = rf_freqs[chnl]
-            generator.ask("freq " + str(freq) + " mhz; *opc?")
+            generator.query("freq " + str(freq) + " mhz; *opc?")
             time.sleep(pause_time)
 
             # get power data

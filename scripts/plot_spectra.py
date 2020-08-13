@@ -6,7 +6,7 @@ from matplotlib.animation import FuncAnimation
 
 parser = argparse.ArgumentParser(
     description="Plot spectra from an spectrometer model in ROACH.")
-parser.add_argument("-i", "--ip", dest="ip", required=True,
+parser.add_argument("-i", "--ip", dest="ip", default=None,
     help="ROACH IP address.")
 parser.add_argument("-b", "--bof", dest="boffile",
     help="Boffile to load into the FPGA.")

@@ -18,7 +18,7 @@ class DummyRoach():
         return 0.0
     
     def snapshot_get(self, dev_name, man_trig=False, man_valid=False, wait_period=1, offset=-1, circular_capture=False, get_extra_val=False, arm=True):
-        return {'data': []}
+        return {'data': b'\0' * 256}
 
     def write_int(self, device_name, integer, blindwrite=False, offset=0):
         pass
@@ -27,6 +27,9 @@ class DummyRoach():
         return 0
 
     def write(self, device_name, data, offset=0):
+        pass
+
+    def blindwrite(self, device_name, data, offset=0):
         pass
 
     def read(self, device_name, size, offset=0):

@@ -3,7 +3,7 @@ import calandigital as cd
 
 parser = argparse.ArgumentParser(
     description="Initialize ROACH communication and program boffile.")
-parser.add_argument("-i", "--ip", dest="ip", required=True,
+parser.add_argument("-i", "--ip", dest="ip", default=None,
     help="ROACH IP address.")
 parser.add_argument("-b", "--bof", dest="boffile",
     help="Boffile to load into the FPGA.")
