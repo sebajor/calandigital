@@ -1,3 +1,4 @@
+#!/usr/bin/env python2
 import argparse
 from valon_synth import *
 from collections import OrderedDict

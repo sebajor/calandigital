@@ -1,3 +1,4 @@
+#!/usr/bin/env python2
 import argparse, os, datetime, tarfile, shutil, pyvisa
 import calandigital as cd
 from calandigital.adc5g_devel.ADCCalibrate import ADCCalibrate

@@ -1,3 +1,4 @@
+#!/usr/bin/env python2
 import pyvisa, argparse, time
 import calandigital as cd
 import numpy as np
