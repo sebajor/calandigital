@@ -59,4 +59,4 @@ class VisaGenerator(Generator):
         :param phase: phase in degrees
         """
         self.instr.write('phase '+str(phase)+' deg')
-        time.sleep(sel.sleep_time)
+        time.sleep(self.sleep_time)

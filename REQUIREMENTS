@@ -7,9 +7,10 @@ matplotlib==2.2.3
 pyserial
 pyvisa==1.10.1
 pyvisa-py==0.3.1
-pyvisa-sim
 setuptools
 git+https://github.com/ska-sa/PySPEAD.git
 git+https://github.com/ska-sa/corr.git
 git+https://github.com/sma-wideband/adc_tests.git
 git+https://github.com/nrao/ValonSynth.git
+
+#pyvisa-sim
