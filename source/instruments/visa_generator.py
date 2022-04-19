@@ -41,7 +41,7 @@ class VisaGenerator(Generator):
         if freq is None:
             self.set_freq_hz()
             return
-        self.set_freq_hz(1000000 * freq)
+        self.set_freq_hz(10**6 * freq)
     
     
     def set_freq_ghz(self, freq=None):
@@ -63,7 +63,7 @@ class VisaGenerator(Generator):
             power = self.def_power
         self.instr.write('power ' + str(power))
         time.sleep(self.sleep_time)
-
+    
     def set_phase_deg(self, phase):
         """
         Set generator phase (if the instrument supports it)
@@ -71,4 +71,3 @@ class VisaGenerator(Generator):
         """
         self.instr.write('phase '+str(phase)+' deg')
         time.sleep(self.sleep_time)
-
