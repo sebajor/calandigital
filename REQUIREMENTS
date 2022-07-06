@@ -9,11 +9,9 @@ pyvisa==1.10.1
 pyvisa-py
 setuptools
 #corr
+git+https://github.com/ska-sa/PySPEAD.git
 git+https://github.com/ska-sa/corr.git
 git+https://github.com/sma-wideband/adc_tests.git
 git+https://github.com/nrao/ValonSynth.git
-git+https://github.com/sebajor/calandigital
-git+https://github.com/ska-sa/PySPEAD.git
-
-#pyvisa-sim
+pyvisa-sim==0.3.0
 
