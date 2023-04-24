@@ -1,28 +1,29 @@
-import visa, time
+import pyvisa, time
 import numpy as np
 
 class sva1075x():
 
     def __init__(self, visaname, sleep_time=0.1):
-        rm = visa.ResourceManager('@py')
+        rm = pyvisa.ResourceManager()
         self.instr = rm.open_resource(visaname)
         self._sleep_time = sleep_time
         time.sleep(self._sleep_time)
 
-    def configure_spectrum(self, freq, pts, res_bw, video_bw, attenuator=0):
+    def configure_spectrum(self, freq, pts, res_bw, video_bw, sw_time, attenuator=20):
         """
             freq:       [initial_freq, end_freq] in Hz
-            pts:        number of points    (the system does what it wants :( )
+            pts:        number of points    (the system does what it wants, only 751 points are available
             res_bw:     resolution bw in Hz
             video_bw:   video bw
+            sw_time:    sweep time
         """
 
         self.set_instr_mode('sa')
 
-        span = freq[1]-freq[0]
-        central_freq = (freq[1]+freq[0])/2
-        
-        cmd ="BAND %f HZ" %res_bw
+        span = freq[1] - freq[0]
+        central_freq = (freq[1] + freq[0]) / 2
+
+        cmd = ":BWID %f Hz" % res_bw
         self.instr.write(cmd)
         time.sleep(self._sleep_time)
 
@@ -30,7 +31,7 @@ class sva1075x():
         self.instr.write(cmd)
         time.sleep(self._sleep_time)
 
-        cmd = "BAND:VID %f Hz" % video_bw
+        cmd = ":BWID:VID %f Hz" % video_bw
         self.instr.write(cmd)
         time.sleep(self._sleep_time)
 
@@ -42,16 +43,17 @@ class sva1075x():
         self.instr.write(cmd)
         time.sleep(self._sleep_time)
 
-        cmd = ":POW:ATT %f" %attenuator
+        cmd = ":POW:ATT %f" % attenuator
         self.instr.write(cmd)
         time.sleep(self._sleep_time)
 
+        cmd = "SWEep:TIME %s" % sw_time
+        self.instr.write(cmd)
+        time.sleep(self._sleep_time)
 
-     
     def get_spectra(self, channel=1):
-        data = self.instr.query_ascii_values(':TRAC:DATA? '+str(channel), container=np.array)
+        data = self.instr.query_ascii_values(':TRAC:DATA? ' + str(channel), container=np.array)
         return data
-    
 
     def get_parameters(self):
         cmd = "BAND?"
@@ -59,7 +61,7 @@ class sva1075x():
         cmd = "FREQ:SPAN?"
         span = self.instr.query_ascii_values(cmd)[0]
         cmd = 'BAND:VID?'
-        video_bw= self.instr.query_ascii_values(cmd)[0]
+        video_bw = self.instr.query_ascii_values(cmd)[0]
         cmd = 'FREQ:CENT?'
         center = self.instr.query_ascii_values(cmd)[0]
         return res_bw, span, video_bw, center
@@ -71,24 +73,26 @@ class sva1075x():
                 -min_hold
                 -average
         """
-        if(mode=='max_hold'):
-            cmd = ':TRAC%i:MODE MAXH' %channel
-        elif(mode=='min_hold'):
-            cmd = ':TRAC%i:MODE MINH'%channel
-        elif(mode=='average'):
-            cmd = ':TRAC%i:MODE AVER'%channel
+        if (mode == 'max_hold'):
+            cmd = ':TRAC%i:MODE MAXH' % channel
+        elif (mode == 'min_hold'):
+            cmd = ':TRAC%i:MODE MINH' % channel
+        elif (mode == 'average'):
+            cmd = ':TRAC%i:MODE AVER' % channel
         else:
-            cmd = ':TRAC%i:MODE WRIT'%channel
+            cmd = ':TRAC%i:MODE WRIT' % channel
         self.instr.write(cmd)
 
     def set_instr_mode(self, mode='sa'):
         """
-        modes:  
+        modes:
                 sa:     spectrum analyzer
                 dma:    modulation analysis
                 dtf:    distance to fault
                 vna:    vector network analyzer
         """
-        cmd = ':INST '+str(mode)
+        cmd = ':INST ' + str(mode)
         self.instr.write(cmd)
-
+    
+    def close_connection(self):
+        self.instr.close()
