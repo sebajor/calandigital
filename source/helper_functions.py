@@ -2,60 +2,53 @@
 Main calandigital script with helper functions.
 """
 import time
-import corr
+import casperfpga
 import numpy as np
 from dummy_roach.dummy_roach import DummyRoach
 
-def initialize_roach(ip, port=7147, boffile=None, upload=False, timeout=10.0):
+def initialize_fpga(ip, port=7147, fpgfile=None, upload=False, timeout=10.0):
     """
-    Initializes ROACH, that is, start ROACH communication, program boffile
+    Initializes the fpga, that is, start the communication, program boffile
     into the FPGA, and creates the FpgaClient object to communicate with.
     :param ip: ROACH IP address. If None use dummy roach.
     :param port: ROACH TCP/IP port for communication.
-    :param boffile: .bof file to program the FPGA. If None porgramming 
-        is skipped.
-    :param upload: If true upload .bof file from PC into ROACH volatile 
-        memory. Supported for ROACH2 only.
+    :param fpgfile: upload the fpg file. Note that when using a SoC you also need 
+        a dtbo
     :param timeout: time to wait before thorwing a timeout exception while
         communicating with roach. Use longer times when extracting large
         amounts of data (e.g. from DRAM).
-    :return: FpgaClient object to communicate with ROACH's FPGA.
+    :return: FpgaClient object to communicate with the FPGA.
     """
-    print("Initializing ROACH communication...")
+    print("Initializing communication...")
     if ip is None:
-        print("Using dummy ROACH...")
-        roach = DummyRoach(ip)
+        print("Using dummy FPGA...")
+        fpga = DummyRoach(ip)
 
     else:
-        roach = corr.katcp_wrapper.FpgaClient(ip, port, timeout=timeout)
+        fpga = casperfpga.CasperFpga(ip)
     
     time.sleep(0.5)
-    if not roach.is_connected():
-        print("Unable to connect to ROACH :/")
+    if not fpga.is_connected():
+        print("Unable to connect to the FPGA :/")
         print("Possible causes:")
-        print("\t1. ROACH wasn't ready to connect yet")
+        print("\t1. FPGA wasn't ready to connect yet")
         print("\t2. Incorrect IP")
-        print("\t3. ROACH not connected to the network")
+        print("\t3. FPGA not connected to the network")
         exit()
     print("done")
 
     if boffile is not None:
-        print("Programming boffile " + boffile + " into ROACH...")
-        if not upload:
-            print("\tProgramming ROACH from internal memory...")
-            roach.progdev(boffile)
-            time.sleep(1)
-        else: # upload
-            print("\tProgramming ROACH from PC memory...")
-            roach.upload_program_bof(boffile, 60000)
-            time.sleep(1)
+        print("Programming fpgfile " + fpgfile + " into FPGA...")
+        print("\tProgramming FPGA from PC memory...")
+        fpga.upload_to_ram_and_program(fpgfile)
+        time.sleep(1)
         print("done")
     else:
-        print("Skipping programming boffile.")
+        print("Skipping programming fpgfile.")
 
     print("Estimating FPGA clock frequency...")
     try:
-        fpga_clock = roach.est_brd_clk()
+        fpga_clock = fpga.estimate_fpga_clock()
     except RuntimeError:
         print("Unable to estimate frequency :/")
         print("Possible causes:")
@@ -65,12 +58,12 @@ def initialize_roach(ip, port=7147, boffile=None, upload=False, timeout=10.0):
         exit()
     print("done. Estimated clock: " + str(fpga_clock))
 
-    return roach
+    return fpga
 
-def read_snapshots(roach, snapshots, dtype='>i1'):
+def read_snapshots(fpga, snapshots, dtype='>i1'):
     """
     Reads snapshot data from a list of snapshots names.
-    :param roach: CalanFpga object to communicate with ROACH.
+    :param fpga: CasperFpga object to communicate with ROACH.
     :param snapshots: list of snapshot names to read.
     :param dtype: data type of data in snapshot. Must be Numpy compatible.
         My prefered format:
@@ -84,16 +77,15 @@ def read_snapshots(roach, snapshots, dtype='>i1'):
     """
     snapdata_list = []
     for snapshot in snapshots:
-        rawdata  = roach.snapshot_get(snapshot, man_trig=True, man_valid=True)['data']
-        snapdata = np.fromstring(rawdata, dtype=dtype)
+        rawdata = fpga.snaphots[snapshot].read_raw(man_trig=True, man_valid=True)['data']
+        snapdata = np.frombuffer(rawdata, dtype=dtype)
         snapdata_list.append(snapdata)
-    
     return snapdata_list
 
-def read_data(roach, bram, awidth, dwidth, dtype):
+def read_data(fpga, bram, awidth, dwidth, dtype):
     """
-    Reads data from a bram in roach.
-    :param roach: CalanFpga object to communicate with ROACH.
+    Reads data from a bram in the fpga.
+    :param fpga: CasperFpga object to communicate with ROACH.
     :param bram: bram name.
     :param awidth: width of bram address in bits.
     :param dwidth: width of bram data in bits.
@@ -101,17 +93,17 @@ def read_data(roach, bram, awidth, dwidth, dtype):
     :return: array with the read data.
     """
     depth = 2**awidth
-    rawdata  = roach.read(bram, depth*dwidth/8, 0)
+    rawdata  = fpga.read(bram, depth*dwidth/8, 0)
     bramdata = np.frombuffer(rawdata, dtype=dtype)
     bramdata = bramdata.astype(np.float)
 
     return bramdata
 
-def read_interleave_data(roach, brams, awidth, dwidth, dtype):
+def read_interleave_data(fpga, brams, awidth, dwidth, dtype):
     """
     Reads data from a list of brams and interleave the data in order to return 
     in correctly ordered (as per typical spectrometer models in ROACH).
-    :param roach: CalanFpga object to communicate with ROACH.
+    :param fpga: CasperFpga object to communicate with ROACH.
     :param brams: list of brams to read and interleave.
     :param awidth: width of bram address in bits.
     :param dwidth: width of bram data in bits.
@@ -121,7 +113,7 @@ def read_interleave_data(roach, brams, awidth, dwidth, dtype):
     # get data
     bramdata_list = []
     for bram in brams:
-        bramdata = read_data(roach, bram, awidth, dwidth, dtype)
+        bramdata = read_data(fpga, bram, awidth, dwidth, dtype)
         bramdata_list.append(bramdata)
 
     # interleave data list into a single array (this works, believe me)
@@ -129,13 +121,13 @@ def read_interleave_data(roach, brams, awidth, dwidth, dtype):
 
     return interleaved_data
 
-def read_deinterleave_data(roach, bram, dfactor, awidth, dwidth, dtype):
+def read_deinterleave_data(fpga, bram, dfactor, awidth, dwidth, dtype):
     """
     Reads data from a bram and deinterleave the data into a dfactor number of 
     separate data arrays. Assumes that lendata % dfactor = 0.
     Useful when independent spectral data is saved in the same bram in an 
     interleaved manner.
-    :param roach: CalanFpga object to communicate with ROACH.
+    :param fpga: CasperFpga object to communicate with the FPGA.
     :param bram: bram name to read.
     :param dfactor: deinterleave factor. The number of arrays in which to
         deinterleave the data.
@@ -145,7 +137,7 @@ def read_deinterleave_data(roach, bram, dfactor, awidth, dwidth, dtype):
     :return: list with the deinterleaved data arrays.
     """
     # get data
-    bramdata = read_data(roach, bram, awidth, dwidth, dtype)
+    bramdata = read_data(fpga, bram, awidth, dwidth, dtype)
 
     lendata  = len(bramdata)
     newshape = (lendata/dfactor, dfactor)
@@ -154,11 +146,11 @@ def read_deinterleave_data(roach, bram, dfactor, awidth, dwidth, dtype):
 
     return bramdata_list
 
-def write_interleaved_data(roach, brams, data):
+def write_interleaved_data(fpga, brams, data):
     """
     Deinterleaves an array of interleaved data, and writes each deinterleaved
     array into a bram of a list of brams.
-    :param roach: CalanFpga object to communicate with ROACH.
+    :param fpga: CasperFpga object to communicate with ROACH.
     :param brams: list of brams to write into.
     :param data: array of data to write. (Every Numpy type is accepted but the
         data converted into bytes before is written).
@@ -171,23 +163,7 @@ def write_interleaved_data(roach, brams, data):
     
     # write data into brams
     for bram, bramdata in zip(brams, bramdata_list):
-        roach.write(bram, bramdata.tobytes(), 0)
-
-def read_dram_data(roach, awidth, dwidth, dtype):
-    """
-    Reads data from a dram in roach.
-    :param roach: CalanFpga object to communicate with ROACH.
-    :param awidth: width of dram address in bits.
-    :param dwidth: width of dram data in bits.
-    :param dtype: data type of data in dram. See read_snapshots().
-    :return: array with the read data.
-    """
-    depth = 2**awidth
-    rawdata  = roach.read_dram(depth*dwidth/8, 0)
-    dramdata = np.frombuffer(rawdata, dtype=dtype)
-    dramdata = dramdata.astype(np.float)
-
-    return dramdata
+        fpga.write(bram, bramdata.tobytes(), 0)
 
 def scale_and_dBFS_specdata(data, acclen, dBFS):
     """
@@ -203,10 +179,8 @@ def scale_and_dBFS_specdata(data, acclen, dBFS):
     """
     # scale data 
     data = data / float(acclen)
-
     # convert data to dBFS
     data = 10*np.log10(data+1) - dBFS
-
     return data
 
 def float2fixed(data, nbits, binpt, signed=True, warn=False):
