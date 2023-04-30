@@ -31,6 +31,8 @@ parser.add_argument("-ar", "--accreg", dest="acc_reg", default="acc_len",
     help="Accumulation register name. Set at initialization.")
 parser.add_argument("-al", "--acclen", dest="acclen", type=int, default=2**16,
     help="Accumulation length. Set at initialization.")
+parser.add_argument("-c", "--complex", dest='complex', action="store_true",
+    help="Indicate if the spectrometers has complex inputs, to consider reoder")
 
 def main():
     args = parser.parse_args()
@@ -59,7 +61,7 @@ def main():
     print("done")
 
     # animation definition
-    def animate(_):
+    def real_animate(_):
         for line, specbrams in zip(lines, specbrams_list):
             # get spectral data
             specdata = cd.read_interleave_data(roach, specbrams, 
@@ -68,7 +70,20 @@ def main():
             line.set_data(freqs, specdata)
         return lines
 
-    ani = FuncAnimation(fig, animate, blit=True)
+    def complex_animate(_):
+        for line, specbrams in zip(lines, specbrams_list):
+            # get spectral data
+            specdata = cd.read_interleave_data(roach, specbrams, 
+                args.awidth, args.dwidth, dtype)
+            specdata = cd.scale_and_dBFS_specdata(specdata, args.acclen, dBFS)
+            specdata = np.concatenate((specdata[len(specdata)//2:], specdata[:len(specdata)//2]))
+            line.set_data(freqs, specdata)
+        return lines
+
+    if(args.complex):
+        ani = FuncAnimation(fig, complex_animate, blit=True)
+    else:
+        ani = FuncAnimation(fig, real_animate, blit=True)
     plt.show()
 
 def create_figure(nspecs, bandwidth, dBFS):

@@ -60,7 +60,7 @@ def initialize_fpga(ip, port=7147, fpgfile=None, upload=False, timeout=10.0):
 
     return fpga
 
-def read_snapshots(fpga, snapshots, dtype='>i1'):
+def read_snapshots(fpga, snapshots, dtype='>i2'):
     """
     Reads snapshot data from a list of snapshots names.
     :param fpga: CasperFpga object to communicate with ROACH.
