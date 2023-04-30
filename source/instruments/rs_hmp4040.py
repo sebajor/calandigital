@@ -1,4 +1,4 @@
-import visa, time
+import pyvisa, time
 
 
 class rs_hmp4040():
@@ -7,9 +7,12 @@ class rs_hmp4040():
     to the machine you dont get a response). So be carefull and first 
     check that the instrument is indeed connected
     """
-    def __init__(self, ip, port, sleep_time=0.1):
+    def __init__(self, visa_name, sleep_time=0.1):
+        """
+        The visaname in ethernet shoudl be something like
         visa_name = 'TCPIP::'+ip+'::'+str(port)+'::SOCKET'
-        self.rm = visa.ResourceManager('@py')
+        """
+        self.rm = pyvisa.ResourceManager('@py')
         self.instr = self.rm.open_resource(visa_name)
         self._sleep_time = sleep_time
         time.sleep(self._sleep_time)

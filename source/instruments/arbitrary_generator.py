@@ -1,4 +1,4 @@
-import visa, time
+import pyvisa, time
 import numpy as np
 
 ###

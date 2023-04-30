@@ -1,13 +1,12 @@
-import visa, time
+import pyvisa, time
 
 
 class rigol_dp832():
     """ class to control Rigol DC generator 
     """
     
-    def __init__(self, ip, sleep_time=0.1):
-        visa_name = 'TCPIP::'+ip+'::INSTR'
-        self.rm = visa.ResourceManager('@py')
+    def __init__(self, visaname, sleep_time=0.1):
+        self.rm = pyvisa.ResourceManager('@py')
         self.instr = self.rm.open_resource(visa_name)
         self._sleep_time = sleep_time
         time.sleep(self._sleep_time)

@@ -1,4 +1,4 @@
-import visa
+import pyvisa
 import sys
 from pyvisa.resources import MessageBasedResource
 import time

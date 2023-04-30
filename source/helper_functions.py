@@ -4,7 +4,7 @@ Main calandigital script with helper functions.
 import time
 import casperfpga
 import numpy as np
-from dummy_roach.dummy_roach import DummyRoach
+from calandigital.dummy_roach.dummy_roach import DummyRoach
 
 def initialize_fpga(ip, port=7147, fpgfile=None, upload=False, timeout=10.0):
     """
@@ -95,7 +95,7 @@ def read_data(fpga, bram, awidth, dwidth, dtype):
     depth = 2**awidth
     rawdata  = fpga.read(bram, depth*dwidth/8, 0)
     bramdata = np.frombuffer(rawdata, dtype=dtype)
-    bramdata = bramdata.astype(np.float)
+    bramdata = bramdata.astype(float)
 
     return bramdata
 
@@ -222,20 +222,20 @@ def check_overflow(data, nbits, binpt, signed):
     # check overflow
     if signed:
         if np.max(data) > max_val_signed:
-            print "WARNING! Maximum value exceeded in overflow check."
-            print "Max allowed value: " + str(max_val_signed)
-            print "Max value in data: " + str(np.max(data))
+            print("WARNING! Maximum value exceeded in overflow check.")
+            print("Max allowed value: " + str(max_val_signed))
+            print("Max value in data: " + str(np.max(data)))
         if np.min(data) < min_val_signed:
-            print "WARNING! Minimum value exceeded in overflow check."
-            print "Min allowed value: " + str(min_val_signed)
-            print "Min value in data: " + str(np.min(data))
+            print("WARNING! Minimum value exceeded in overflow check.")
+            print("Min allowed value: " + str(min_val_signed))
+            print("Min value in data: " + str(np.min(data)))
 
     else: # unsigned
         if np.max(data) > max_val_unsigned:
-            print "WARNING! Maximum value exceeded in overflow check."
-            print "Max allowed value: " + str(max_val_unsigned)
-            print "Max value in data: " + str(np.max(data))
+            print("WARNING! Maximum value exceeded in overflow check.")
+            print("Max allowed value: " + str(max_val_unsigned))
+            print("Max value in data: " + str(np.max(data)))
         if np.min(data) < min_val_unsigned:
-            print "WARNING! Minimum value exceeded in overflow check."
-            print "Min allowed value: " + str(min_val_unsigned)
-            print "Min value in data: " + str(np.min(data))
+            print("WARNING! Minimum value exceeded in overflow check.")
+            print("Min allowed value: " + str(min_val_unsigned))
+            print("Min value in data: " + str(np.min(data)))
