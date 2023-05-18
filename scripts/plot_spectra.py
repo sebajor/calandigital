@@ -9,8 +9,8 @@ parser = argparse.ArgumentParser(
     description="Plot spectra from an spectrometer model in ROACH.")
 parser.add_argument("-i", "--ip", dest="ip", default=None,
     help="ROACH IP address.")
-parser.add_argument("-b", "--bof", dest="boffile",
-    help="Boffile to load into the FPGA.")
+parser.add_argument("-fpg", "--fpg", dest="fpgfile",
+    help="fpgfile to load into the FPGA.")
 parser.add_argument("-u", "--upload", dest="upload", action="store_true",
     help="If used, upload .bof from PC memory (ROACH2 only).")
 parser.add_argument("-bn", "--bramnames", dest="bramnames", nargs="*",
@@ -38,12 +38,12 @@ def main():
     args = parser.parse_args()
 
     # initialize roach
-    roach = cd.initialize_roach(args.ip, boffile=args.boffile, upload=args.upload)
+    roach = cd.initialize_fpga(args.ip, fpgfile=args.fpgfile, upload=args.upload)
 
     # useful parameters
-    nbrams         = len(args.bramnames) / args.nspecs
+    nbrams         = len(args.bramnames) // args.nspecs
     specbrams_list = [args.bramnames[i*nbrams:(i+1)*nbrams] for i in range(args.nspecs)]
-    dtype          = '>u' + str(args.dwidth/8)
+    dtype          = '>u' + str(args.dwidth//8)
     nchannels      = 2**args.awidth * nbrams 
     freqs          = np.linspace(0, args.bandwidth, nchannels, endpoint=False)
     dBFS           = 6.02*args.nbits + 1.76 + 10*np.log10(nchannels)

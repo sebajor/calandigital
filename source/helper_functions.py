@@ -37,7 +37,7 @@ def initialize_fpga(ip, port=7147, fpgfile=None, upload=False, timeout=10.0):
         exit()
     print("done")
 
-    if boffile is not None:
+    if fpgfile is not None:
         print("Programming fpgfile " + fpgfile + " into FPGA...")
         print("\tProgramming FPGA from PC memory...")
         fpga.upload_to_ram_and_program(fpgfile)
@@ -159,7 +159,7 @@ def write_interleaved_data(fpga, brams, data):
     nbrams = len(brams)
 
     # deinterleave data into arrays (this works, believe me)
-    bramdata_list = np.transpose(np.reshape(data, (ndata/nbrams, nbrams)))
+    bramdata_list = np.transpose(np.reshape(data, (ndata//nbrams, nbrams)))
     
     # write data into brams
     for bram, bramdata in zip(brams, bramdata_list):
@@ -198,7 +198,7 @@ def float2fixed(data, nbits, binpt, signed=True, warn=False):
     if warn:
         check_overflow(data, nbits, binpt, signed)
 
-    nbytes = int(np.ceil(nbits/8))
+    nbytes = int(np.ceil(nbits//8))
     dtype = '>i'+str(nbytes) if signed else '>u'+str(nbytes)
 
     fixedpoint_data = (2**binpt * data).astype(dtype)
